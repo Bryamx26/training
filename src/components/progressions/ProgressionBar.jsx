@@ -25,6 +25,8 @@ function ProgressBar({ user }) {
           margin-top:8px;
           display:flex;
           justify-content:space-between;
+          align-items:center;
+          gap:8px;
           font-size:14px;
           font-weight:bold;
           color:var(--color-foreground);
@@ -32,12 +34,19 @@ function ProgressBar({ user }) {
         .progress-name{
           font-weight:200;
           color:var(--color-card-foreground);
+          min-width:0;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+        }
+        .progress-score{
+          flex-shrink:0;
         }
       `}</style>
       <div>
         <div className="progress-text">
           <span className="progress-name">{user.name}</span>
-          <span>{user.progress / 10}/10</span>
+          <span className="progress-score">{user.progress / 10}/10</span>
         </div>
         <div className="progress-container">
           <div

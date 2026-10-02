@@ -1,0 +1,140 @@
+// Schéma basé sur base_de_donnees_sport_db.excalidraw
+// Entités : Profil, Circuit, Exercice (+ tables de liaison Muscle / Participant)
+
+generator client {
+  provider = "prisma-client-js"
+  // généré dans node_modules de l'api (dossier voisin) puisque la base
+  // de données et l'api vivent dans des dossiers différents
+  output   = "../api/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  COACH
+  ADMIN
+}
+
+enum TypeCircuit {
+  FORCE
+  ENDURANCE
+  HYPERTROPHIE
+  FIGURE
+}
+
+model Profil {
+  id           Int      @id @default(autoincrement())
+  nom          String
+  prenom       String
+  mail         String   @unique
+  motDePasse   String
+  poids        Float?
+  taille       Float?
+  age          Int?
+  blessures    String?
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  circuits       Circuit[]            @relation("CircuitAuteur")
+  participations CircuitParticipant[]
+  exerciceNotes  ExerciceNote[]
+
+  @@map("profils")
+}
+
+model Circuit {
+  id        Int         @id @default(autoincrement())
+  nom       String
+  note      Float?
+  niveau    String?
+  type      TypeCircuit
+  date      DateTime
+  createdAt DateTime    @default(now())
+
+  auteurId Int
+  auteur   Profil @relation("CircuitAuteur", fields: [auteurId], references: [id], onDelete: Cascade)
+
+  personnes CircuitParticipant[]
+  exercices Exercice[]
+
+  @@map("circuits")
+}
+
+model CircuitParticipant {
+  id        Int    @id @default(autoincrement())
+  circuitId Int
+  profilId  Int
+  circuit   Circuit @relation(fields: [circuitId], references: [id], onDelete: Cascade)
+  profil    Profil  @relation(fields: [profilId], references: [id], onDelete: Cascade)
+
+  @@unique([circuitId, profilId])
+  @@map("circuit_participants")
+}
+
+model Exercice {
+  id           Int     @id @default(autoincrement())
+  exercice     String
+  description  String?
+  consignes    String?
+  objectif     String?
+  series       Int?
+  nbRep        Int?
+  duree        Int?
+  tempsDeRepos Int?
+  tempo        String?
+  lest         Float?
+  amplitude    String?
+  url          String?
+  ordre        Int     @default(0)
+
+  circuitId Int
+  circuit   Circuit @relation(fields: [circuitId], references: [id], onDelete: Cascade)
+
+  muscles ExerciceMuscle[]
+  notes   ExerciceNote[]
+
+  @@map("exercices")
+}
+
+// Évaluation du coach pour un exercice, indépendante par participant :
+// une séance à plusieurs sportifs peut être notée différemment pour chacun.
+model ExerciceNote {
+  id          Int      @id @default(autoincrement())
+  note        Float?
+  commentaire String?
+  updatedAt   DateTime @updatedAt
+
+  exerciceId Int
+  exercice   Exercice @relation(fields: [exerciceId], references: [id], onDelete: Cascade)
+
+  profilId Int
+  profil   Profil @relation(fields: [profilId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciceId, profilId])
+  @@map("exercice_notes")
+}
+
+model Muscle {
+  id   Int    @id @default(autoincrement())
+  nom  String @unique
+
+  exercices ExerciceMuscle[]
+
+  @@map("muscles")
+}
+
+model ExerciceMuscle {
+  id         Int      @id @default(autoincrement())
+  exerciceId Int
+  muscleId   Int
+  exercice   Exercice @relation(fields: [exerciceId], references: [id], onDelete: Cascade)
+  muscle     Muscle   @relation(fields: [muscleId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciceId, muscleId])
+  @@map("exercice_muscles")
+}

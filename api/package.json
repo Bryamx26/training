@@ -1,0 +1,25 @@
+{
+  "name": "sport-api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "db:generate": "prisma generate --schema=../database/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=../database/schema.prisma",
+    "db:studio": "prisma studio --schema=../database/schema.prisma",
+    "db:seed": "node ../database/seed.cjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "google-auth-library": "^10.9.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.9.0"
+  }
+}

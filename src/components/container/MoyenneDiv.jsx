@@ -2,6 +2,7 @@
 //Composant qui montre un ensemble de données utilisateurs et la moyenne de leurs progressions 
 //
 //
+import { TrendingUp } from "lucide-react";
 import CircularProgress from "../progressions/CircularProgress";
 import ProgressBar from "../progressions/ProgressionBar";
 function MoyenneDiv({ users, text }) {
@@ -17,6 +18,7 @@ function MoyenneDiv({ users, text }) {
           box-shadow: var(--shadow-card);
           width: 100%;
           max-width: 420px;
+          margin: 0 auto;
         }
         .moyenne-header {
           display: flex;
@@ -42,11 +44,14 @@ function MoyenneDiv({ users, text }) {
         .moyenne-content {
           display: flex;
           align-items: center;
-          justify-content: space-evenly; 
-          gap: 25px;
+          justify-content: space-evenly;
+          gap: 20px;
+          flex-wrap: wrap;
         }
         .users-progress {
-          width: clamp(190px, 30vw, 210px);
+          flex: 1 1 160px;
+          width: clamp(160px, 40vw, 210px);
+          min-width: 0;
           display: flex;
           flex-direction: column;
         }
@@ -65,7 +70,7 @@ function MoyenneDiv({ users, text }) {
             </h2>
           </div>
           <span className="moyenne-trend">
-            ↗ +6,4%
+            <TrendingUp className="w-3.5 h-3.5" style={{ display: "inline", verticalAlign: "-2px" }} /> +6,4%
           </span>
         </div>
         <div className="moyenne-content">

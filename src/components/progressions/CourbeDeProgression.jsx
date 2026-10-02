@@ -250,8 +250,6 @@ export default function CourbeDeProgression({ seances = [], vueInitiale = "mois"
         background: "var(--color-card)",
         borderRadius: 28,
         padding: "28px 24px 20px",
-        maxWidth: 480,
-        margin: "0 auto",
         fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
         boxShadow: "var(--shadow-card)",
       }}

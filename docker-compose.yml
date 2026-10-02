@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: training-api
+    working_dir: /workspace/api
+    command: sh -c "npx prisma migrate deploy --schema=../database/schema.prisma && npx prisma generate --schema=../database/schema.prisma && node ../database/seed.cjs && node src/index.js"
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+    volumes:
+      - .:/workspace
+      - api_node_modules:/workspace/api/node_modules
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: training-web
+    working_dir: /workspace
+    command: npx vite --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_PROXY_TARGET=http://api:4000
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+    volumes:
+      - .:/workspace
+      - web_node_modules:/workspace/node_modules
+    depends_on:
+      - api
+
+volumes:
+  api_node_modules:
+  web_node_modules:
