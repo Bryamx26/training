@@ -1,4 +1,3 @@
-
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 function SportifCard({ initiales, nom, sousTitre, notes = [], moyenne, onClick }) {
@@ -7,103 +6,26 @@ function SportifCard({ initiales, nom, sousTitre, notes = [], moyenne, onClick }
   return (
     <button
       onClick={onClick}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        width: "100%",
-
-        background: "var(--color-card)",
-        border: "none",
-        borderRadius: 38,
-        padding: "10px 20px",
-        cursor: "pointer",
-        textAlign: "left",
-        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-
-        boxShadow: "var(--shadow-card)",
-        transition: "transform 0.15s ease, box-shadow 0.15s ease",
-      }}
+      className="press flex items-center gap-2.5 w-full bg-card rounded-[38px] px-5 py-2.5 text-left cursor-pointer shadow-[var(--shadow-card)]"
     >
-      {/* Avatar */}
-      <div
-        style={{
-          flexShrink: 0,
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: "#111111",
-          color: "#ffffff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: 700,
-          fontSize: 16,
-          letterSpacing: "0.02em",
-        }}
-      >
+      <div className="shrink-0 w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-base tracking-wide">
         {initiales}
       </div>
 
-      {/* Nom + sous-titre */}
-      <div style={{ flex: "1 1 auto", minWidth: 0 }}>
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: 19,
-
-            color: "var(--color-foreground)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {nom}
-        </div>
-        <div
-          style={{
-            fontSize: 15,
-            color: "#8a8a8a",
-            marginTop: 2,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {sousTitre}
-        </div>
+      <div className="flex-1 min-w-0">
+        <div className="font-bold text-lg text-foreground whitespace-nowrap overflow-hidden text-ellipsis">{nom}</div>
+        <div className="text-[15px] text-muted-foreground mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">{sousTitre}</div>
       </div>
 
-      {/* Mini courbe */}
-      <div style={{ width: 100, height: 32, flexShrink: 0 }}>
+      <div className="w-[100px] h-8 shrink-0">
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 4 }}>
-            <Line
-              type="monotone"
-              dataKey="note"
-              stroke="#22c55e"
-              strokeWidth={3}
-              dot={false}
-              isAnimationActive={false}
-            />
+            <Line type="monotone" dataKey="note" stroke="var(--color-success)" strokeWidth={3} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Score */}
-      <div
-        style={{
-          flexShrink: 0,
-          fontWeight: 800,
-          fontSize: 24,
-
-          color: "var(--color-foreground)",
-          minWidth: 52,
-          textAlign: "right",
-        }}
-      >
-        {moyenne.toFixed(1)}
-      </div>
+      <div className="shrink-0 font-extrabold text-2xl text-foreground min-w-[52px] text-right">{moyenne.toFixed(1)}</div>
     </button>
   );
 }

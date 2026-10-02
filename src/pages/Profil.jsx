@@ -8,6 +8,7 @@ import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import DarkModeToggle from "../components/bouton/DarkModeToggle.jsx";
+import ThemePicker from "../components/bouton/ThemePicker.jsx";
 import { computeScoreForProfil } from "../lib/score";
 
 function Profil() {
@@ -49,7 +50,7 @@ function Profil() {
 
   return (
     <div>
-      <TopAppBar title="Profil" action={<DarkModeToggle />} />
+      <TopAppBar title="Profil" />
 
       <div className="px-5 flex flex-col gap-6 pb-8">
         <div className="flex items-center gap-4">
@@ -59,9 +60,17 @@ function Profil() {
               {user.prenom} {user.nom}
             </h2>
             <p className="text-caption text-muted-foreground">{user.mail}</p>
-            <span className="text-label mt-1 inline-block px-2.5 py-1 rounded-full" style={{ background: "var(--color-secondary)" }}>
+            <span className="text-label mt-1 inline-block px-2.5 py-1 rounded-full bg-secondary">
               {user.role === "ADMIN" ? "Entraîneur" : user.role === "COACH" ? "Coach" : "Sportif"}
             </span>
+          </div>
+        </div>
+
+        <div>
+          <span className="text-label text-muted-foreground">Apparence</span>
+          <div className="card-surface p-4 mt-2 flex items-center justify-between">
+            <ThemePicker />
+            <DarkModeToggle />
           </div>
         </div>
 
@@ -81,11 +90,11 @@ function Profil() {
         {isAdmin && (
           <div className="flex flex-col gap-3">
             <button onClick={() => navigate("/admin/utilisateurs")} className="card-surface press flex items-center gap-3 p-4 text-left">
-              <UsersIcon className="w-5 h-5" style={{ color: "var(--color-info)" }} />
+              <UsersIcon className="w-5 h-5 text-info" />
               <span className="text-sm font-bold flex-1">Gérer les utilisateurs</span>
             </button>
             <button onClick={() => navigate("/seances/nouvelle")} className="card-surface press flex items-center gap-3 p-4 text-left">
-              <Plus className="w-5 h-5" style={{ color: "var(--color-success)" }} />
+              <Plus className="w-5 h-5 text-success" />
               <span className="text-sm font-bold flex-1">Créer une séance</span>
             </button>
           </div>

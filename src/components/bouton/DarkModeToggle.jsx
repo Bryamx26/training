@@ -21,13 +21,10 @@ function DarkModeToggle() {
   }, [isDark]);
 
   return (
-    <button style={{
-      boxShadow: "var(--shadow-card)",
-      background: "var(--color-card)",
-    }}
+    <button
       onClick={() => setIsDark((prev) => !prev)}
       aria-label="Basculer le mode sombre"
-      className="press flex items-center justify-center w-10 h-10 rounded-full bg-secondary hover:bg-muted transition-colors"
+      className="press flex items-center justify-center w-10 h-10 rounded-full bg-card shadow-[var(--shadow-card)] hover:bg-muted transition-colors"
     >
       {isDark ? (
         <Sun className="w-5 h-5 text-secondary-foreground" />

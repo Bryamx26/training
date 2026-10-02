@@ -25,9 +25,7 @@ export function EmptyState({ title = "Rien à afficher", subtitle, action }) {
 export function ErrorState({ message = "Une erreur est survenue." }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 py-16 text-center px-6">
-      <p className="text-h3" style={{ color: "var(--color-destructive)" }}>
-        Oups
-      </p>
+      <p className="text-h3 text-destructive">Oups</p>
       <p className="text-caption text-muted-foreground">{message}</p>
     </div>
   );

@@ -36,7 +36,7 @@ function SeanceCard({ circuit, showParticipants = false, profilId = null }) {
             {formatDate(circuit.date)}
           </div>
         </div>
-        <span className="text-label px-3 py-1.5 rounded-full shrink-0" style={{ background: "var(--color-secondary)" }}>
+        <span className="text-label px-3 py-1.5 rounded-full shrink-0 bg-secondary">
           {TYPE_LABEL[circuit.type] ?? circuit.type}
         </span>
       </div>
@@ -51,14 +51,11 @@ function SeanceCard({ circuit, showParticipants = false, profilId = null }) {
             {score.total}/{score.max} · {score.percentage}%
           </span>
         ) : score === null && personnes.length > 1 && !upcoming ? (
-          <span
-            className="text-caption font-bold"
-            style={{ color: gradedCount === personnes.length ? "var(--color-success)" : "var(--color-muted-foreground)" }}
-          >
+          <span className={`text-caption font-bold ${gradedCount === personnes.length ? "text-success" : "text-muted-foreground"}`}>
             {gradedCount}/{personnes.length} notées
           </span>
         ) : (
-          <span className="text-caption font-bold" style={{ color: upcoming ? "var(--color-info)" : "var(--color-muted-foreground)" }}>
+          <span className={`text-caption font-bold ${upcoming ? "text-info" : "text-muted-foreground"}`}>
             {upcoming ? "À venir" : "Non notée"}
           </span>
         )}

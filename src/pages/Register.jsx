@@ -37,11 +37,8 @@ function Register() {
     <div className="min-h-dvh flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col gap-8 animate-rise">
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="flex items-center justify-center w-16 h-16 rounded-3xl"
-            style={{ background: "var(--color-primary)" }}
-          >
-            <Dumbbell className="w-8 h-8" style={{ color: "var(--color-primary-foreground)" }} />
+          <div className="flex items-center justify-center w-16 h-16 rounded-3xl bg-primary">
+            <Dumbbell className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-display">Créer un compte</h1>
           <p className="text-caption text-muted-foreground text-center">
@@ -73,31 +70,25 @@ function Register() {
 
           <div className="flex flex-col gap-1.5">
             <span className="text-label text-muted-foreground">Je suis…</span>
-            <div className="flex p-1 rounded-2xl gap-1" style={{ background: "var(--color-secondary)" }}>
+            <div className="flex p-1 rounded-2xl gap-1 bg-secondary">
               <button
                 type="button"
                 onClick={() => setRole("USER")}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors"
-                style={role === "USER" ? { background: "var(--color-card)", boxShadow: "var(--shadow-soft)" } : undefined}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${role === "USER" ? "bg-card shadow-[var(--shadow-soft)]" : ""}`}
               >
                 Sportif
               </button>
               <button
                 type="button"
                 onClick={() => setRole("COACH")}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors"
-                style={role === "COACH" ? { background: "var(--color-card)", boxShadow: "var(--shadow-soft)" } : undefined}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${role === "COACH" ? "bg-card shadow-[var(--shadow-soft)]" : ""}`}
               >
                 Coach
               </button>
             </div>
           </div>
 
-          {error && (
-            <p className="text-caption text-center" style={{ color: "var(--color-destructive)" }}>
-              {error}
-            </p>
-          )}
+          {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
           <Button type="submit" disabled={loading} className="w-full mt-2">
             {loading ? "Création..." : "Créer mon compte"}
@@ -105,16 +96,16 @@ function Register() {
         </form>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px" style={{ background: "var(--color-border)" }} />
+          <div className="flex-1 h-px bg-border" />
           <span className="text-caption text-muted-foreground">ou</span>
-          <div className="flex-1 h-px" style={{ background: "var(--color-border)" }} />
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         <GoogleSignInButton />
 
         <p className="text-caption text-muted-foreground text-center">
           Déjà un compte ?{" "}
-          <Link to="/login" className="font-bold" style={{ color: "var(--color-foreground)" }}>
+          <Link to="/login" className="font-bold text-foreground">
             Se connecter
           </Link>
         </p>

@@ -32,11 +32,8 @@ function Login() {
     <div className="min-h-dvh flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm flex flex-col gap-8 animate-rise">
         <div className="flex flex-col items-center gap-3">
-          <div
-            className="flex items-center justify-center w-16 h-16 rounded-3xl"
-            style={{ background: "var(--color-primary)" }}
-          >
-            <Dumbbell className="w-8 h-8" style={{ color: "var(--color-primary-foreground)" }} />
+          <div className="flex items-center justify-center w-16 h-16 rounded-3xl bg-primary">
+            <Dumbbell className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-display">Sport Track</h1>
           <p className="text-caption text-muted-foreground text-center">
@@ -62,11 +59,7 @@ function Login() {
             required
           />
 
-          {error && (
-            <p className="text-caption text-center" style={{ color: "var(--color-destructive)" }}>
-              {error}
-            </p>
-          )}
+          {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
           <Button type="submit" disabled={loading} className="w-full mt-2">
             {loading ? "Connexion..." : "Se connecter"}
@@ -74,16 +67,16 @@ function Login() {
         </form>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px" style={{ background: "var(--color-border)" }} />
+          <div className="flex-1 h-px bg-border" />
           <span className="text-caption text-muted-foreground">ou</span>
-          <div className="flex-1 h-px" style={{ background: "var(--color-border)" }} />
+          <div className="flex-1 h-px bg-border" />
         </div>
 
         <GoogleSignInButton />
 
         <p className="text-caption text-muted-foreground text-center">
           Pas encore de compte ?{" "}
-          <Link to="/inscription" className="font-bold" style={{ color: "var(--color-foreground)" }}>
+          <Link to="/inscription" className="font-bold text-foreground">
             Créer un compte
           </Link>
         </p>

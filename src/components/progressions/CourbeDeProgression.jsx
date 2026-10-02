@@ -81,34 +81,16 @@ function SelecteurVue({ vue, onChange }) {
   ];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        background: "var(--color-secondary)",
-        borderRadius: 999,
-        padding: 4,
-        marginBottom: 16,
-      }}
-    >
+    <div className="flex bg-secondary rounded-full p-1 mb-4">
       {options.map((opt) => {
         const active = vue === opt.value;
         return (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            style={{
-              flex: 1,
-              border: "none",
-              borderRadius: 999,
-              padding: "10px 0",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: active ? "var(--color-card)" : "transparent",
-              color: active ? "var(--color-foreground)" : "var(--color-muted-foreground)",
-              boxShadow: active ? "var(--shadow-soft)" : "none",
-              transition: "all 0.15s ease",
-            }}
+            className={`flex-1 border-0 rounded-full py-2.5 text-sm font-bold cursor-pointer transition-all duration-150 ${
+              active ? "bg-card text-foreground shadow-[var(--shadow-soft)]" : "bg-transparent text-muted-foreground"
+            }`}
           >
             {opt.label}
           </button>
@@ -122,41 +104,20 @@ function SelecteurVue({ vue, onChange }) {
 
 function NavigationPeriode({ label, onPrev, onNext }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 20,
-      }}
-    >
-      <button onClick={onPrev} aria-label="Période précédente" style={navButtonStyle}>
+    <div className="flex items-center justify-between mb-5">
+      <button onClick={onPrev} aria-label="Période précédente" className={navButtonClass}>
         ‹
       </button>
-      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--color-foreground)" }}>
-        {label}
-      </span>
-      <button onClick={onNext} aria-label="Période suivante" style={navButtonStyle}>
+      <span className="text-[15px] font-bold text-foreground">{label}</span>
+      <button onClick={onNext} aria-label="Période suivante" className={navButtonClass}>
         ›
       </button>
     </div>
   );
 }
 
-const navButtonStyle = {
-  width: 32,
-  height: 32,
-  borderRadius: "50%",
-  border: "none",
-  background: "var(--color-muted)",
-  color: "var(--color-foreground)",
-  fontSize: 18,
-  lineHeight: 1,
-  cursor: "pointer",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-};
+const navButtonClass =
+  "w-8 h-8 rounded-full border-0 bg-muted text-foreground text-lg leading-none cursor-pointer flex items-center justify-center";
 
 /**
  * CourbeDeProgression
@@ -245,32 +206,13 @@ export default function CourbeDeProgression({ seances = [], vueInitiale = "mois"
   }
 
   return (
-    <div
-      style={{
-        background: "var(--color-card)",
-        borderRadius: 28,
-        padding: "28px 24px 20px",
-        fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-        boxShadow: "var(--shadow-card)",
-      }}
-      className="card-surface"
-    >
-      <h2
-        style={{
-          margin: "0 0 20px",
-          fontSize: 24,
-          fontWeight: 800,
-          color: "var(--color-foreground)",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        Courbe de progression
-      </h2>
+    <div className="bg-card rounded-[28px] shadow-[var(--shadow-card)] px-6 pt-7 pb-5">
+      <h2 className="mb-5 text-2xl font-extrabold text-foreground tracking-[-0.02em]">Courbe de progression</h2>
 
       <SelecteurVue vue={vue} onChange={changerVue} />
       <NavigationPeriode label={label} onPrev={goPrev} onNext={goNext} />
 
-      <div style={{ width: "100%", height: 260 }}>
+      <div className="w-full h-[260px]">
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" strokeWidth={1} />

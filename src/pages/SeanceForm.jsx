@@ -169,7 +169,7 @@ function SeanceForm() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <span className="text-label text-muted-foreground">Exercices</span>
-            <button type="button" onClick={addExercice} className="press flex items-center gap-1 text-sm font-bold" style={{ color: "var(--color-info)" }}>
+            <button type="button" onClick={addExercice} className="press flex items-center gap-1 text-sm font-bold text-info">
               <Plus className="w-4 h-4" /> Ajouter
             </button>
           </div>
@@ -181,7 +181,7 @@ function SeanceForm() {
                   <span className="text-caption font-bold text-muted-foreground">Exercice {i + 1}</span>
                   {exercices.length > 1 && (
                     <button type="button" onClick={() => removeExercice(i)} className="press" aria-label="Supprimer">
-                      <Trash2 className="w-4 h-4" style={{ color: "var(--color-destructive)" }} />
+                      <Trash2 className="w-4 h-4 text-destructive" />
                     </button>
                   )}
                 </div>
@@ -214,11 +214,7 @@ function SeanceForm() {
           </div>
         </div>
 
-        {error && (
-          <p className="text-caption text-center" style={{ color: "var(--color-destructive)" }}>
-            {error}
-          </p>
-        )}
+        {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
         <Button type="submit" disabled={saving}>
           {saving ? "Enregistrement..." : editing ? "Enregistrer les modifications" : "Créer la séance"}

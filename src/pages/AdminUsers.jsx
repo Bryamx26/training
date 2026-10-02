@@ -66,7 +66,7 @@ function UserForm({ initial, onCancel, onSaved }) {
         <Input placeholder="Taille" inputMode="numeric" value={form.taille} onChange={(e) => setForm({ ...form, taille: e.target.value })} />
       </div>
       {error && (
-        <p className="text-caption" style={{ color: "var(--color-destructive)" }}>
+        <p className="text-caption text-destructive">
           {error}
         </p>
       )}
@@ -107,8 +107,7 @@ function AdminUsers() {
         action={
           <button
             onClick={() => setFormTarget({})}
-            className="press flex items-center justify-center w-10 h-10 rounded-full"
-            style={{ background: "var(--color-primary)", color: "var(--color-primary-foreground)" }}
+            className="press flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground"
             aria-label="Ajouter un utilisateur"
           >
             <Plus className="w-5 h-5" />
@@ -141,7 +140,7 @@ function AdminUsers() {
               <Pencil className="w-4 h-4" />
             </button>
             <button onClick={() => handleDelete(u.id)} className="press p-2" aria-label="Supprimer">
-              <Trash2 className="w-4 h-4" style={{ color: "var(--color-destructive)" }} />
+              <Trash2 className="w-4 h-4 text-destructive" />
             </button>
           </div>
         ))}

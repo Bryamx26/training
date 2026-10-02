@@ -58,10 +58,7 @@ function ExerciceCard({ exercice, index, editable = false, grade, onGrade }) {
     <div className="card-surface p-5 flex flex-col gap-4 animate-rise">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0"
-            style={{ background: "var(--color-secondary)" }}
-          >
+          <span className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold shrink-0 bg-secondary">
             {index + 1}
           </span>
           <h3 className="text-h3 truncate">{exercice.exercice}</h3>
@@ -82,7 +79,7 @@ function ExerciceCard({ exercice, index, editable = false, grade, onGrade }) {
       )}
       {exercice.description && <p className="text-caption">{exercice.description}</p>}
       {exercice.consignes && (
-        <p className="text-caption px-3 py-2 rounded-xl" style={{ background: "var(--color-muted)" }}>
+        <p className="text-caption px-3 py-2 rounded-xl bg-muted">
           <span className="font-bold">Consignes : </span>
           {exercice.consignes}
         </p>

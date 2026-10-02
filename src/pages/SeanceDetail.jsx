@@ -61,14 +61,13 @@ function SeanceDetail() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/seances/${id}/modifier`)}
-                className="press flex items-center justify-center w-9 h-9 rounded-full"
-                style={{ background: "var(--color-secondary)" }}
+                className="press flex items-center justify-center w-9 h-9 rounded-full bg-secondary"
                 aria-label="Modifier"
               >
                 <Pencil className="w-4 h-4" />
               </button>
-              <button onClick={handleDelete} className="press flex items-center justify-center w-9 h-9 rounded-full" style={{ background: "var(--color-secondary)" }} aria-label="Supprimer">
-                <Trash2 className="w-4 h-4" style={{ color: "var(--color-destructive)" }} />
+              <button onClick={handleDelete} className="press flex items-center justify-center w-9 h-9 rounded-full bg-secondary" aria-label="Supprimer">
+                <Trash2 className="w-4 h-4 text-destructive" />
               </button>
             </div>
           )
@@ -77,14 +76,8 @@ function SeanceDetail() {
 
       <div className="px-5 flex flex-col gap-5 pb-8">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-label px-3 py-1.5 rounded-full" style={{ background: "var(--color-secondary)" }}>
-            {TYPE_LABEL[circuit.type] ?? circuit.type}
-          </span>
-          {circuit.niveau && (
-            <span className="text-label px-3 py-1.5 rounded-full" style={{ background: "var(--color-secondary)" }}>
-              {circuit.niveau}
-            </span>
-          )}
+          <span className="text-label px-3 py-1.5 rounded-full bg-secondary">{TYPE_LABEL[circuit.type] ?? circuit.type}</span>
+          {circuit.niveau && <span className="text-label px-3 py-1.5 rounded-full bg-secondary">{circuit.niveau}</span>}
           <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
             <Calendar className="w-3.5 h-3.5" />
             {new Date(circuit.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
@@ -100,11 +93,9 @@ function SeanceDetail() {
                   key={p.profilId}
                   type="button"
                   onClick={() => setSelectedProfilId(p.profilId)}
-                  className="press shrink-0 flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full"
-                  style={{
-                    background: active ? "var(--color-primary)" : "var(--color-secondary)",
-                    color: active ? "var(--color-primary-foreground)" : "var(--color-foreground)",
-                  }}
+                  className={`press shrink-0 flex items-center gap-2 pl-2 pr-4 py-1.5 rounded-full ${
+                    active ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                  }`}
                 >
                   <Avatar nom={p.profil.nom} prenom={p.profil.prenom} size={24} />
                   <span className="text-sm font-bold">{p.profil.prenom}</span>

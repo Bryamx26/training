@@ -69,11 +69,7 @@ function GoogleSignInButton() {
   return (
     <div className="flex flex-col items-center gap-2">
       <div ref={buttonRef} />
-      {error && (
-        <p className="text-caption text-center" style={{ color: "var(--color-destructive)" }}>
-          {error}
-        </p>
-      )}
+      {error && <p className="text-caption text-center text-destructive">{error}</p>}
     </div>
   );
 }

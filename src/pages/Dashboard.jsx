@@ -113,11 +113,11 @@ function DashboardAdmin({ user }) {
 
       <div className="flex gap-3">
         <button onClick={() => navigate("/seances/nouvelle")} className="card-surface press flex-1 flex flex-col items-center gap-2 p-4">
-          <Plus className="w-5 h-5" style={{ color: "var(--color-success)" }} />
+          <Plus className="w-5 h-5 text-success" />
           <span className="text-caption font-bold">Créer une séance</span>
         </button>
         <button onClick={() => navigate("/admin/utilisateurs")} className="card-surface press flex-1 flex flex-col items-center gap-2 p-4">
-          <UserPlus className="w-5 h-5" style={{ color: "var(--color-info)" }} />
+          <UserPlus className="w-5 h-5 text-info" />
           <span className="text-caption font-bold">Ajouter un sportif</span>
         </button>
       </div>
@@ -125,7 +125,7 @@ function DashboardAdmin({ user }) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-label text-muted-foreground">Sportifs récents</p>
-          <button onClick={() => navigate("/admin/utilisateurs")} className="flex items-center text-caption font-bold" style={{ color: "var(--color-info)" }}>
+          <button onClick={() => navigate("/admin/utilisateurs")} className="flex items-center text-caption font-bold text-info">
             Voir tout <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>

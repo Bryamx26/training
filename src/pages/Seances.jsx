@@ -40,8 +40,7 @@ function Seances() {
           isAdmin && (
             <button
               onClick={() => navigate("/seances/nouvelle")}
-              className="press flex items-center justify-center w-10 h-10 rounded-full"
-              style={{ background: "var(--color-primary)", color: "var(--color-primary-foreground)" }}
+              className="press flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground"
               aria-label="Créer une séance"
             >
               <Plus className="w-5 h-5" />

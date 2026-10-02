@@ -39,7 +39,7 @@ function CircularProgress({ value, text, r, s, fS, color }) {
         strokeDashoffset={strokeDashoffset}
         strokeLinecap="round"
         transform={`rotate(-90 ${radius} ${radius})`}
-        style={{ transition: "stroke-dashoffset 0.4s ease" }}
+        className="transition-[stroke-dashoffset] duration-[400ms] ease-out"
       />
       {/* Pourcentage */}
       <text
