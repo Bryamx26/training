@@ -1,0 +1,656 @@
+openapi: 3.0.3
+info:
+  title: Sport Track API
+  version: 1.0.0
+  description: |
+    API REST de Sport Track (suivi sportif coach / sportif).
+
+    **Authentification** : `POST /auth/login` (ou `/auth/google`) renvoie un jeton
+    à envoyer dans `Authorization: Bearer <jeton>`.
+
+    **Rôles** : `USER` (sportif), `COACH`, `ADMIN`. COACH et ADMIN sont des coachs
+    (« staff ») : ils créent les séances, notent les sportifs et ont des abonnés.
+
+    **Erreurs** : `{ "error": "message lisible", "code": "CODE_METIER" }`. Le `code`
+    est stable (ex. `UNAUTHENTICATED`, `FORBIDDEN`, `VALIDATION_ERROR`,
+    `ATHLETE_NOT_SUBSCRIBED`, `TEMPLATE_NOT_FOUND`).
+servers:
+  - url: /api
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Profils
+  - name: Séances
+  - name: Exercices
+  - name: Templates
+    description: Modèles de séance personnels d'un coach.
+  - name: Abonnements
+  - name: Muscles
+
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion par e-mail et mot de passe
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mail, motDePasse]
+              properties:
+                mail: { type: string, format: email }
+                motDePasse: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Session" }
+        "401": { $ref: "#/components/responses/Error" }
+  /auth/google:
+    post:
+      tags: [Auth]
+      summary: Connexion avec un jeton d'identité Google
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credential]
+              properties:
+                credential: { type: string }
+      responses:
+        "200": { $ref: "#/components/responses/Session" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /profils:
+    get:
+      tags: [Profils]
+      summary: Liste de tous les comptes (admin uniquement)
+      responses:
+        "200":
+          description: Profils
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Profil" } }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Profils]
+      summary: Inscription, ou création d'un sportif par un coach
+      description: Public. Un sportif créé par un coach connecté lui est abonné d'office. Le rôle ADMIN est réservé à un admin.
+      security: [{}, { bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfilInput" }
+      responses:
+        "201":
+          description: Profil créé
+          content: { application/json: { schema: { $ref: "#/components/schemas/Profil" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /profils/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Profils]
+      summary: Détail d'un profil (soi-même, admin, ou coach lié au sportif)
+      responses:
+        "200":
+          description: Profil
+          content: { application/json: { schema: { $ref: "#/components/schemas/Profil" } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [Profils]
+      summary: Modifier un profil (soi-même, admin, ou coach d'un abonné actif)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProfilInput" }
+      responses:
+        "200":
+          description: Profil modifié
+          content: { application/json: { schema: { $ref: "#/components/schemas/Profil" } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Profils]
+      summary: Supprimer un profil
+      responses:
+        "204": { description: Supprimé }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /circuits:
+    get:
+      tags: [Séances]
+      summary: Séances visibles par l'utilisateur
+      description: Un sportif voit ses séances, un coach les siennes, un admin toutes. Les filtres ne peuvent que restreindre ce périmètre.
+      parameters:
+        - { name: profilId, in: query, schema: { type: integer } }
+        - { name: auteurId, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: Séances
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Circuit" } }
+    post:
+      tags: [Séances]
+      summary: Créer une séance (coach)
+      description: |
+        `niveau` est un texte libre (valeur prédéfinie ou difficulté personnalisée).
+        Le nom d'un exercice est libre (exercice du catalogue ou saisi par le coach).
+        Chaque participant doit être un abonné actif du coach (403 `ATHLETE_NOT_SUBSCRIBED` sinon).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/CircuitInput"
+                - type: object
+                  properties:
+                    participantIds: { type: array, items: { type: integer } }
+                    exercices: { type: array, items: { $ref: "#/components/schemas/ExerciceInput" } }
+      responses:
+        "201":
+          description: Séance créée
+          content: { application/json: { schema: { $ref: "#/components/schemas/Circuit" } } }
+        "403": { $ref: "#/components/responses/Error" }
+  /circuits/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Séances]
+      summary: Détail d'une séance (auteur, admin ou participant)
+      responses:
+        "200":
+          description: Séance
+          content: { application/json: { schema: { $ref: "#/components/schemas/Circuit" } } }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [Séances]
+      summary: Modifier une séance (auteur ou admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CircuitInput" }
+      responses:
+        "200":
+          description: Séance modifiée
+          content: { application/json: { schema: { $ref: "#/components/schemas/Circuit" } } }
+        "403": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Séances]
+      summary: Supprimer une séance (auteur ou admin)
+      responses:
+        "204": { description: Supprimée }
+        "403": { $ref: "#/components/responses/Error" }
+  /circuits/{id}/participants:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      tags: [Séances]
+      summary: Remplacer les participants
+      description: Les sportifs ajoutés doivent être abonnés à l'auteur ; les participants déjà présents sont conservés même s'ils se sont désabonnés.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [participantIds]
+              properties:
+                participantIds: { type: array, items: { type: integer } }
+      responses:
+        "200":
+          description: Séance mise à jour
+          content: { application/json: { schema: { $ref: "#/components/schemas/Circuit" } } }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Séances]
+      summary: Ajouter un participant (abonné actif uniquement)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profilId]
+              properties:
+                profilId: { type: integer }
+      responses:
+        "201": { description: Participant ajouté }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /circuits/{id}/participants/{profilId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { name: profilId, in: path, required: true, schema: { type: integer } }
+    delete:
+      tags: [Séances]
+      summary: Retirer un participant
+      responses:
+        "204": { description: Retiré }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /exercices:
+    get:
+      tags: [Exercices]
+      summary: Exercices d'une séance gérée par le coach
+      parameters:
+        - { name: circuitId, in: query, description: Obligatoire sauf pour un admin, schema: { type: integer } }
+      responses:
+        "200":
+          description: Exercices
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Exercice" } }
+    post:
+      tags: [Exercices]
+      summary: Ajouter un exercice à une séance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/ExerciceInput"
+                - type: object
+                  required: [circuitId]
+                  properties:
+                    circuitId: { type: integer }
+      responses:
+        "201":
+          description: Exercice créé
+          content: { application/json: { schema: { $ref: "#/components/schemas/Exercice" } } }
+  /exercices/catalogue:
+    get:
+      tags: [Exercices]
+      summary: Exercices proposés au coach dans le formulaire
+      description: Catalogue de base + exercices déjà utilisés par le coach connecté (séances et templates), avec leurs derniers paramètres.
+      responses:
+        "200":
+          description: Catalogue trié par nom
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [exercice]
+                  properties:
+                    exercice: { type: string, example: Squat }
+                    series: { type: integer, nullable: true }
+                    nbRep: { type: integer, nullable: true }
+                    duree: { type: integer, nullable: true }
+                    tempsDeRepos: { type: integer, nullable: true }
+                    objectif: { type: string, nullable: true }
+                    consignes: { type: string, nullable: true }
+  /exercices/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Exercices]
+      summary: Détail d'un exercice
+      responses:
+        "200":
+          description: Exercice
+          content: { application/json: { schema: { $ref: "#/components/schemas/Exercice" } } }
+    put:
+      tags: [Exercices]
+      summary: Modifier un exercice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExerciceInput" }
+      responses:
+        "200":
+          description: Exercice modifié
+          content: { application/json: { schema: { $ref: "#/components/schemas/Exercice" } } }
+    delete:
+      tags: [Exercices]
+      summary: Supprimer un exercice
+      responses:
+        "204": { description: Supprimé }
+  /exercices/{id}/notes/{profilId}:
+    parameters:
+      - { $ref: "#/components/parameters/Id" }
+      - { name: profilId, in: path, required: true, schema: { type: integer } }
+    put:
+      tags: [Exercices]
+      summary: Noter un participant sur un exercice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note: { type: number, minimum: 0, maximum: 10 }
+                commentaire: { type: string }
+      responses:
+        "200": { description: Note enregistrée }
+
+  /templates:
+    get:
+      tags: [Templates]
+      summary: Templates du coach connecté
+      responses:
+        "200":
+          description: Résumé des templates, du plus récemment modifié au plus ancien
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/TemplateSummary" } }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Templates]
+      summary: Créer un template
+      description: Le propriétaire est le coach du jeton. Aucun participant n'est enregistré.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TemplateInput" }
+      responses:
+        "201":
+          description: Template créé
+          content: { application/json: { schema: { $ref: "#/components/schemas/Template" } } }
+        "400": { $ref: "#/components/responses/Error" }
+  /templates/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Templates]
+      summary: Détail d'un template du coach connecté
+      responses:
+        "200":
+          description: Template
+          content: { application/json: { schema: { $ref: "#/components/schemas/Template" } } }
+        "404":
+          description: Template inexistant ou appartenant à un autre coach (`TEMPLATE_NOT_FOUND`)
+          content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    put:
+      tags: [Templates]
+      summary: Modifier un template du coach connecté
+      description: Remplace tout le contenu. Les séances déjà créées depuis ce template ne changent pas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TemplateInput" }
+      responses:
+        "200":
+          description: Template modifié
+          content: { application/json: { schema: { $ref: "#/components/schemas/Template" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      tags: [Templates]
+      summary: Supprimer un template du coach connecté
+      responses:
+        "204": { description: Supprimé }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /coaches:
+    get:
+      tags: [Abonnements]
+      summary: Rechercher des coachs
+      parameters:
+        - { name: search, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Coachs, avec l'état d'abonnement de l'utilisateur connecté
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  allOf:
+                    - $ref: "#/components/schemas/Coach"
+                    - type: object
+                      properties:
+                        subscribed: { type: boolean }
+  /coaches/{id}:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    get:
+      tags: [Abonnements]
+      summary: Fiche d'un coach
+      responses:
+        "200":
+          description: Coach
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Coach"
+                  - type: object
+                    properties:
+                      subscribed: { type: boolean }
+                      subscribersCount: { type: integer }
+                      circuitsCount: { type: integer }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /coaches/{id}/subscribe:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    post:
+      tags: [Abonnements]
+      summary: S'abonner à un coach (sportif)
+      responses:
+        "200": { description: Abonnement annulé réactivé }
+        "201": { description: Abonnement créé }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+    patch:
+      tags: [Abonnements]
+      summary: Se désabonner d'un coach
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [cancelled] }
+      responses:
+        "200": { description: Abonnement annulé (historique conservé) }
+        "404": { $ref: "#/components/responses/Error" }
+  /me/coaches:
+    get:
+      tags: [Abonnements]
+      summary: Coachs suivis par l'utilisateur connecté
+      responses:
+        "200":
+          description: Coachs
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Coach" } }
+  /me/subscribers:
+    get:
+      tags: [Abonnements]
+      summary: Abonnés actifs du coach connecté
+      responses:
+        "200":
+          description: Sportifs
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Profil" } }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /muscles:
+    get:
+      tags: [Muscles]
+      summary: Liste des muscles
+      responses:
+        "200": { description: Muscles }
+    post:
+      tags: [Muscles]
+      summary: Créer un muscle (coach)
+      responses:
+        "201": { description: Muscle créé }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: integer } }
+
+  responses:
+    Error:
+      description: Erreur
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Session:
+      description: Session ouverte
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token: { type: string }
+              profil: { $ref: "#/components/schemas/Profil" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        code: { type: string, example: TEMPLATE_NOT_FOUND }
+
+    TypeCircuit:
+      type: string
+      enum: [FORCE, ENDURANCE, HYPERTROPHIE, FIGURE]
+
+    Profil:
+      type: object
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+        prenom: { type: string }
+        mail: { type: string }
+        poids: { type: number, nullable: true }
+        taille: { type: number, nullable: true }
+        age: { type: integer, nullable: true }
+        blessures: { type: string, nullable: true }
+        role: { type: string, enum: [USER, COACH, ADMIN] }
+        createdAt: { type: string, format: date-time }
+    ProfilInput:
+      type: object
+      properties:
+        nom: { type: string }
+        prenom: { type: string }
+        mail: { type: string }
+        motDePasse: { type: string }
+        poids: { type: number }
+        taille: { type: number }
+        age: { type: integer }
+        blessures: { type: string }
+        role: { type: string, enum: [USER, COACH, ADMIN] }
+    Coach:
+      type: object
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+        prenom: { type: string }
+        role: { type: string, enum: [COACH, ADMIN] }
+        createdAt: { type: string, format: date-time }
+
+    ExerciceInput:
+      type: object
+      required: [exercice]
+      properties:
+        exercice: { type: string, description: "Nom du catalogue ou nom personnalisé", example: Squat }
+        description: { type: string, nullable: true }
+        consignes: { type: string, nullable: true }
+        objectif: { type: string, nullable: true }
+        series: { type: integer, minimum: 0, nullable: true }
+        nbRep: { type: integer, minimum: 0, nullable: true }
+        duree: { type: integer, minimum: 0, description: Secondes, nullable: true }
+        tempsDeRepos: { type: integer, minimum: 0, description: Secondes, nullable: true }
+        tempo: { type: string, nullable: true }
+        lest: { type: number, minimum: 0, nullable: true }
+        amplitude: { type: string, nullable: true }
+        url: { type: string, nullable: true }
+        ordre: { type: integer }
+    Exercice:
+      allOf:
+        - $ref: "#/components/schemas/ExerciceInput"
+        - type: object
+          properties:
+            id: { type: integer }
+            circuitId: { type: integer }
+
+    CircuitInput:
+      type: object
+      required: [nom, type, date]
+      properties:
+        nom: { type: string }
+        type: { $ref: "#/components/schemas/TypeCircuit" }
+        niveau: { type: string, nullable: true, description: "Difficulté en texte libre (ex. Débutant, ou une valeur personnalisée)" }
+        date: { type: string, format: date }
+    Circuit:
+      allOf:
+        - $ref: "#/components/schemas/CircuitInput"
+        - type: object
+          properties:
+            id: { type: integer }
+            auteurId: { type: integer }
+            exercices: { type: array, items: { $ref: "#/components/schemas/Exercice" } }
+            personnes:
+              type: array
+              items:
+                type: object
+                properties:
+                  profilId: { type: integer }
+
+    TemplateInput:
+      type: object
+      required: [nom, exercices]
+      properties:
+        nom: { type: string, example: Full body débutant }
+        niveau: { type: string, nullable: true, description: "Difficulté en texte libre" }
+        type: { allOf: [{ $ref: "#/components/schemas/TypeCircuit" }], nullable: true }
+        exercices:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/ExerciceInput" }
+    TemplateSummary:
+      type: object
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+        niveau: { type: string, nullable: true }
+        type: { allOf: [{ $ref: "#/components/schemas/TypeCircuit" }], nullable: true }
+        coachId: { type: integer }
+        exercicesCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    Template:
+      type: object
+      properties:
+        id: { type: integer }
+        nom: { type: string }
+        niveau: { type: string, nullable: true }
+        type: { allOf: [{ $ref: "#/components/schemas/TypeCircuit" }], nullable: true }
+        coachId: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        exercices:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ExerciceInput"
+              - type: object
+                properties:
+                  id: { type: integer }
+                  templateId: { type: integer }

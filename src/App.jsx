@@ -13,6 +13,9 @@ import Stats from "./pages/Stats";
 import Profil from "./pages/Profil";
 import AdminUsers from "./pages/AdminUsers";
 import SportifDetail from "./pages/SportifDetail";
+import Templates from "./pages/Templates";
+import TemplateDetail from "./pages/TemplateDetail";
+import TemplateForm from "./pages/TemplateForm";
 import "./App.css";
 
 function App() {
@@ -64,6 +67,38 @@ function App() {
             element={
               <AdminRoute>
                 <AdminUsers />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/templates"
+            element={
+              <AdminRoute>
+                <Templates />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/templates/nouveau"
+            element={
+              <AdminRoute>
+                <TemplateForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/templates/:id"
+            element={
+              <AdminRoute>
+                <TemplateDetail />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/templates/:id/modifier"
+            element={
+              <AdminRoute>
+                <TemplateForm />
               </AdminRoute>
             }
           />

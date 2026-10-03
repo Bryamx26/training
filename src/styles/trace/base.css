@@ -1,0 +1,131 @@
+/* Design Tracé — base et typographie. Tous les sélecteurs sont préfixés par
+   [data-design="trace"]. Ces règles sont hors @layer : elles passent devant les
+   utilitaires Tailwind sans toucher au CSS du design Classique. */
+
+[data-design="trace"] body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+/* Les utilitaires Classiques (font-display, text-display…) imposent Sora :
+   en Tracé, tout hérite d'Archivo, et seules les classes mono passent en
+   JetBrains Mono. */
+[data-design="trace"] body * {
+  font-family: inherit;
+}
+
+/* Angles nets partout : seuls les composants Tracé dédiés (StatusPill) gardent
+   une pilule. */
+[data-design="trace"] :is(
+  .card-surface,
+  .rounded,
+  .rounded-sm,
+  .rounded-md,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl,
+  .rounded-full,
+  [class*="rounded-["]
+) {
+  border-radius: var(--radius-sm);
+}
+
+[data-design="trace"] .card-surface {
+  background-color: var(--paper-raised);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+[data-design="trace"] .press:active {
+  transform: none;
+}
+
+/* Focus clavier visible sur tout élément interactif. */
+[data-design="trace"] :is(a, button, input, select, textarea, [role="radio"], [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Icônes Lucide : trait fin, angles carrés. */
+[data-design="trace"] svg.lucide {
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* --- Typographie --- */
+
+[data-design="trace"] .t-display {
+  font-size: 44px;
+  line-height: 44px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+[data-design="trace"] .t-display--coach {
+  font-size: 40px;
+  line-height: 42px;
+}
+[data-design="trace"] .t-page {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+[data-design="trace"] .t-title {
+  font-size: 28px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+[data-design="trace"] .t-heading {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+[data-design="trace"] .t-body {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+}
+[data-design="trace"] .t-label {
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .t-mono,
+[data-design="trace"] .t-metric,
+[data-design="trace"] .t-metric-xl,
+[data-design="trace"] .t-metric-sm {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+[data-design="trace"] .t-metric {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+[data-design="trace"] .t-metric-xl {
+  font-size: 52px;
+  line-height: 52px;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+[data-design="trace"] .t-metric-xl--lg {
+  font-size: 64px;
+  line-height: 64px;
+}
+[data-design="trace"] .t-metric-sm {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+[data-design="trace"] .t-muted {
+  color: var(--ink-muted);
+}

@@ -1,27 +1,51 @@
 import { TrendingUp } from "lucide-react";
-import CircularProgress from "../progressions/CircularProgress";
-import ProgressBar from "../progressions/ProgressionBar";
+import ProgressRow from "../trace/ProgressRow";
+import ScoreRing from "../relief/ScoreRing";
+import ProgressBar from "../relief/ProgressBar";
+import TrendBadge from "../relief/TrendBadge";
+import { useDesign } from "../../context/DesignContext";
 
 function MoyenneDiv({ users, text }) {
   const total = users.reduce((acc, user) => acc + user.progress, 0);
   const moyenne = users.length > 0 ? total / users.length : 0;
+  const { design } = useDesign();
+
+  if (design === "trace") {
+    return (
+      <div className="st-slab flex flex-col gap-5 animate-rise">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="t-label">Progression moyenne</span>
+            <span className="t-heading">Groupe entier</span>
+          </div>
+          <span className="st-volt-text t-mono inline-flex items-center gap-1 text-[13px] font-semibold">
+            <TrendingUp className="w-3.5 h-3.5" /> +6,4%
+          </span>
+        </div>
+        <span className="t-metric-xl t-metric-xl--lg st-volt-text">{Math.round(moyenne)}%</span>
+        <div className="flex flex-col gap-3">
+          {users.map((user) => (
+            <ProgressRow key={user.id} name={user.name} value={user.progress} display={`${user.progress / 10}/10`} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-card rounded-[25px] p-6 shadow-[var(--shadow-card)] w-full max-w-[420px] mx-auto">
-      <div className="flex items-center justify-between mb-[25px]">
-        <div>
-          <p className="text-label text-muted-foreground">Progression moyenne</p>
-          <h2 className="text-display text-card-foreground">Groupe entier</h2>
+    <div className="rl-card flex flex-col gap-5 animate-rise">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <span className="rl-label">Progression moyenne</span>
+          <h2 className="text-[20px] leading-7 font-extrabold">Groupe entier</h2>
         </div>
-        <span className="text-success inline-flex items-center gap-1">
-          <TrendingUp className="w-3.5 h-3.5" /> +6,4%
-        </span>
+        <TrendBadge>+6,4%</TrendBadge>
       </div>
-      <div className="flex items-center justify-evenly gap-5 flex-wrap">
-        <CircularProgress value={Math.round(moyenne)} text={text} r={65} />
-        <div className="flex-1 basis-40 w-[clamp(160px,40vw,210px)] min-w-0 flex flex-col">
-          {users.slice(0, 3).map((user) => (
-            <ProgressBar user={user} key={user.id} />
+      <div className="flex items-center gap-5 flex-wrap">
+        <ScoreRing value={Math.round(moyenne)} caption={text} size={128} />
+        <div className="flex-1 basis-40 min-w-0 flex flex-col gap-3">
+          {users.map((user) => (
+            <ProgressBar key={user.id} value={user.progress} name={user.name} display={`${user.progress / 10}/10`} />
           ))}
         </div>
       </div>

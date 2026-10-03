@@ -9,7 +9,8 @@
     "db:generate": "prisma generate --schema=../database/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=../database/schema.prisma",
     "db:studio": "prisma studio --schema=../database/schema.prisma",
-    "db:seed": "node ../database/seed.cjs"
+    "db:seed": "node ../database/seed.cjs",
+    "test": "npm run db:generate && node --test test/*.test.js"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
@@ -17,7 +18,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "google-auth-library": "^10.9.1"
+    "google-auth-library": "^10.9.1",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "prisma": "^6.9.0"

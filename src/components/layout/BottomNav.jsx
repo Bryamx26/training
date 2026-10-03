@@ -13,8 +13,8 @@ function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card pb-[max(8px,env(safe-area-inset-bottom))]">
-      <div className="flex items-center justify-around px-2 py-2 max-w-xl mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card pb-[max(8px,env(safe-area-inset-bottom))] st-tabbar">
+      <div className="flex items-center justify-around px-2 py-2 max-w-xl mx-auto st-tabbar-inner">
         {TABS.map(({ to, label, icon: Icon }) => {
           const active = location.pathname === to;
           return (
@@ -22,10 +22,14 @@ function BottomNav() {
               key={to}
               type="button"
               onClick={() => navigate(to)}
-              className="press flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-2xl"
+              aria-current={active ? "page" : undefined}
+              className="press flex flex-col items-center justify-center gap-1 flex-1 py-1.5 rounded-2xl st-tab"
             >
-              <Icon className={`w-5 h-5 ${active ? "text-accent-foreground" : "text-muted-foreground"}`} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-[11px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+              {/* `contents` : la tuile n'existe qu'en Tracé ; Relief garde l'icône seule. */}
+              <span className="contents st-tab-icon">
+                <Icon className={`w-5 h-5 ${active ? "text-accent-foreground" : "text-muted-foreground"}`} strokeWidth={active ? 2.5 : 2} />
+              </span>
+              <span className={`text-[11px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"} st-tab-label`}>{label}</span>
             </button>
           );
         })}

@@ -1,0 +1,83 @@
+/* Design Tracé — tokens.
+   Tout est scopé sous [data-design="trace"] : rien ne s'applique au design
+   Classique. Le mode sombre de l'app est porté par la classe .dark sur <html>
+   (data-theme y sert déjà aux thèmes de couleur), d'où [data-design="trace"].dark.
+   Le suffixe :root ne sert qu'à passer devant les blocs :root / .dark /
+   [data-theme] de src/index.css quel que soit l'ordre de chargement. */
+
+[data-design="trace"]:root {
+  --paper: #f3f2ec;        /* fond de page */
+  --paper-raised: #ffffff; /* cartes, champs, tab bar */
+  --line: #d9d7ce;         /* filets 1px, bordures au repos */
+  --ink: #0d0f12;          /* texte principal, chiffres */
+  --ink-muted: #5b5f66;    /* libellés, unités, métadonnées */
+  --slab: #0d0f12;         /* grands aplats sombres (score, KPI vedette) */
+  --on-slab: #f3f2ec;      /* texte sur slab */
+  --on-slab-muted: #9da2aa;/* libellés sur slab */
+  --slab-track: #30353f;   /* segments vides sur slab */
+  --volt: #d6ff3d;         /* signature : action principale, onglet actif, progression */
+  --on-volt: #0d0f12;
+  --volt-ink: #4d6b00;     /* volt en version texte sur fond clair */
+  --signal: #c2410c;       /* effort / alerte / suppression */
+  --on-signal: #ffffff;
+  --cobalt: #1f3bd6;       /* données, liens, statut « À venir », courbes */
+  --cobalt-soft: #e3e7ff;  /* fond des pastilles cobalt */
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px #1f3bd6;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px;
+  --radius-none: 0; --radius-xs: 2px; --radius-sm: 4px; --radius-pill: 9999px;
+
+  --font-sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+[data-design="trace"]:root.dark {
+  --paper: #0d0f12; --paper-raised: #171a1f; --line: #2a2e35;
+  --ink: #f3f2ec; --ink-muted: #9da2aa;
+  --slab: #30353f; --on-slab: #f3f2ec; --slab-track: #4a505c;
+  --volt-ink: #d6ff3d; --signal: #ff7a3d; --on-signal: #0d0f12;
+  --cobalt: #8a9cff; --cobalt-soft: #1a2050;
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px #d6ff3d;
+}
+
+/* Pont vers les tokens sémantiques existants (bg-card, text-muted-foreground…),
+   pour que les écrans non retravaillés (formulaire de séance, utilisateurs,
+   lecteur) adoptent aussi la palette Tracé. Les thèmes de couleur
+   (data-theme="ocean"/"sunset") sont neutralisés en Tracé. */
+[data-design="trace"]:root {
+  --radius: 4px;
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --surface: var(--paper);
+  --card: var(--paper-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-raised);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--slab);
+  --primary-foreground: var(--on-slab);
+  --secondary: var(--paper);
+  --secondary-foreground: var(--ink);
+  --accent: var(--volt);
+  --accent-foreground: var(--on-volt);
+
+  --muted: var(--paper);
+  --muted-foreground: var(--ink-muted);
+
+  --success: var(--volt-ink);
+  --warning: var(--signal);
+  --progress-mid: var(--volt-ink);
+  --destructive: var(--signal);
+  --destructive-foreground: var(--on-signal);
+  --info: var(--cobalt);
+
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--cobalt);
+
+  --shadow-soft: 0 0 #0000;
+  --shadow-card: 0 0 #0000;
+  --shadow-lift: 0 0 #0000;
+}

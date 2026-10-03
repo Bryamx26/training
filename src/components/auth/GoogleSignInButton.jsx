@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useDesign } from "../../context/DesignContext";
+import Button from "../ui/Button";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const SCRIPT_SRC = "https://accounts.google.com/gsi/client";
@@ -25,6 +27,7 @@ function loadGoogleScript() {
 
 function GoogleSignInButton() {
   const { loginWithGoogle } = useAuth();
+  const { design } = useDesign();
   const navigate = useNavigate();
   const buttonRef = useRef(null);
   const [error, setError] = useState(null);
@@ -63,6 +66,13 @@ function GoogleSignInButton() {
   }, [loginWithGoogle, navigate]);
 
   if (!CLIENT_ID) {
+    if (design === "relief") {
+      return (
+        <Button variant="soft" disabled className="w-full">
+          Connexion Google non configurée
+        </Button>
+      );
+    }
     return <p className="text-caption text-center text-muted-foreground">Connexion Google non configurée.</p>;
   }
 

@@ -32,10 +32,3 @@ export function noteForProfil(exercice, profilId) {
 export function computeScoreForProfil(exercices = [], profilId) {
   return computeScore(exercices.map((ex) => ({ note: noteForProfil(ex, profilId)?.note })));
 }
-
-// Rouge 0-39%, Orange 40-69%, Vert 70-100%
-export function scoreColor(percentage) {
-  if (percentage < 40) return "var(--color-destructive)";
-  if (percentage < 70) return "var(--color-warning)";
-  return "var(--color-success)";
-}

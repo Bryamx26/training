@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>exos</title>
+    <script>
+      // Pose le design choisi avant le rendu React pour éviter un flash de l'autre design.
+      (function () {
+        // "relief" par défaut ; toute autre valeur que "trace" (dont l'ancien
+        // "classic") est migrée vers "relief" par DesignProvider.
+        var design = "relief";
+        try {
+          if (localStorage.getItem("sporttrack.design") === "trace") design = "trace";
+        } catch (e) {}
+        document.documentElement.dataset.design = design;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

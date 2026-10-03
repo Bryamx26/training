@@ -1,0 +1,693 @@
+/* Design Relief — composants.
+   1. Classes st-* posées sur le markup partagé (aussi stylées par Tracé sous
+      son propre préfixe).
+   2. Classes rl-* rendues par src/components/relief/. */
+
+/* ===================== Markup partagé (st-*) ===================== */
+
+/* ---------- AppShell / TopAppBar ---------- */
+
+[data-design="relief"] .st-topbar {
+  padding: 28px 20px 16px;
+  gap: 12px;
+  background: var(--surface);
+  backdrop-filter: none;
+}
+[data-design="relief"] .st-topbar-title {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+[data-design="relief"] .st-topbar-title--sm {
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- TabBar flottante ---------- */
+
+[data-design="relief"] .st-tabbar {
+  background: transparent;
+  border: 0;
+  padding: 0 16px max(20px, env(safe-area-inset-bottom));
+}
+[data-design="relief"] .st-tabbar-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--r-nav);
+  background: var(--surface);
+  box-shadow: var(--e2);
+}
+[data-design="relief"] .st-tab {
+  min-height: 52px;
+  padding: 0;
+  gap: 3px;
+  border-radius: 18px;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-tab svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-tab-label {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-tab[aria-current="page"] {
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .st-tab[aria-current="page"] svg {
+  color: var(--progress);
+}
+[data-design="relief"] .st-tab[aria-current="page"] .st-tab-label {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+/* ---------- Button ---------- */
+
+[data-design="relief"] .st-button {
+  height: 52px;
+  padding: 0 22px;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--r-pill);
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--e2);
+}
+[data-design="relief"] .st-button svg {
+  width: 18px;
+  height: 18px;
+}
+[data-design="relief"] .st-button--primary {
+  background: var(--action);
+  color: var(--on-action);
+}
+[data-design="relief"] .st-button--danger {
+  background: var(--danger);
+  color: var(--on-action);
+}
+[data-design="relief"] .st-button--danger-soft {
+  box-shadow: var(--e1);
+  color: var(--danger);
+}
+[data-design="relief"] .st-button--ghost {
+  background: transparent;
+  box-shadow: none;
+}
+[data-design="relief"] .st-button:not(.st-button--primary, .st-button--danger):active {
+  box-shadow: var(--pressed);
+  color: var(--ink-muted);
+}
+[data-design="relief"] :is(.st-button--primary, .st-button--danger):active {
+  box-shadow: var(--e1);
+}
+/* Bouton désactivé (ex. Google non configuré) : relief réduit et texte atténué,
+   sans la transparence de l'utilitaire disabled:opacity-50 (contraste). */
+[data-design="relief"] .st-button:disabled:not(.st-button--primary) {
+  opacity: 1;
+  box-shadow: var(--e1);
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-button--lg {
+  height: 54px;
+}
+[data-design="relief"] .st-button--sm {
+  height: 44px;
+  padding: 0 22px;
+}
+
+/* ---------- IconButton ---------- */
+
+[data-design="relief"] .st-iconbutton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--e1);
+}
+[data-design="relief"] .st-iconbutton svg {
+  width: 18px;
+  height: 18px;
+  color: inherit;
+}
+[data-design="relief"] .st-iconbutton:active {
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .st-iconbutton--danger {
+  color: var(--danger);
+}
+[data-design="relief"] .st-iconbutton--primary {
+  width: 48px;
+  height: 48px;
+  background: var(--action);
+  color: var(--on-action);
+  box-shadow: var(--e2);
+}
+
+/* ---------- Field / SearchField ---------- */
+
+[data-design="relief"] .st-field {
+  gap: 8px;
+}
+[data-design="relief"] .st-field-label {
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-input {
+  height: 50px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--r-field);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: var(--inset);
+}
+[data-design="relief"] textarea.st-input {
+  height: auto;
+  min-height: 76px;
+  padding: 14px 18px;
+  line-height: 22px;
+  resize: none;
+}
+/* Garde le creux au focus (l'utilitaire focus:ring le remplacerait) et
+   ajoute le contour de focus. */
+[data-design="relief"] .st-input:focus {
+  outline: var(--focus);
+  outline-offset: 3px;
+  box-shadow: var(--inset);
+}
+[data-design="relief"] .st-input::placeholder {
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+[data-design="relief"] .st-search .st-input {
+  border-radius: var(--r-pill);
+  padding-left: 46px;
+}
+[data-design="relief"] .st-search-icon {
+  left: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--ink-muted);
+}
+
+/* ---------- Méta (date, participants) ---------- */
+
+[data-design="relief"] .st-meta {
+  gap: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .st-meta svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ===================== Composants Relief (rl-*) ===================== */
+
+/* ---------- Surfaces ---------- */
+
+[data-design="relief"] .rl-card {
+  background: var(--surface);
+  border: var(--card-edge);
+  border-radius: var(--r-card);
+  padding: 20px;
+  box-shadow: var(--e3);
+}
+[data-design="relief"] .rl-tile {
+  background: var(--surface);
+  border-radius: var(--r-tile);
+  padding: 18px;
+  box-shadow: var(--e2);
+}
+[data-design="relief"] .rl-well {
+  border-radius: 16px;
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-inset-disc {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-pill);
+  box-shadow: var(--inset);
+}
+
+/* ---------- Lignes en pilule (sportifs, menu) ---------- */
+
+[data-design="relief"] .rl-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 18px 8px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: var(--e2);
+}
+[data-design="relief"] .rl-row:active {
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-row--menu {
+  min-height: 60px;
+  padding: 10px 20px 10px 10px;
+}
+[data-design="relief"] .rl-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+[data-design="relief"] .rl-row-title {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-design="relief"] .rl-row-value {
+  font-size: 20px;
+  font-weight: 800;
+  min-width: 40px;
+  text-align: right;
+}
+[data-design="relief"] .rl-row-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+[data-design="relief"] .rl-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+[data-design="relief"] .rl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--info);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ---------- Avatar ---------- */
+
+[data-design="relief"] .rl-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: var(--action);
+  color: var(--on-action);
+  font-weight: 800;
+}
+[data-design="relief"] .rl-avatar--muted {
+  background: var(--ink-muted);
+}
+[data-design="relief"] .rl-pedestal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 76px;
+  height: 76px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--e2);
+}
+
+/* ---------- SegmentedControl ---------- */
+
+[data-design="relief"] .rl-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 5px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--inset);
+}
+[data-design="relief"] .rl-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+[data-design="relief"] .rl-segment[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+  box-shadow: var(--e1);
+}
+
+/* ---------- Tag / StatusPill / TrendBadge ---------- */
+
+[data-design="relief"] .rl-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--e1);
+}
+[data-design="relief"] .rl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--ink-muted);
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-status--info {
+  color: var(--info);
+}
+[data-design="relief"] .rl-status--done {
+  color: var(--progress-ink);
+}
+[data-design="relief"] .rl-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  color: var(--progress-ink);
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-trend svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ---------- ScoreRing ---------- */
+
+[data-design="relief"] .rl-ring {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--e2);
+}
+[data-design="relief"] .rl-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+[data-design="relief"] .rl-ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  flex-direction: column;
+  width: 56%;
+  height: 56%;
+}
+[data-design="relief"] .rl-ring-value {
+  font-size: 22px;
+  line-height: 26px;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-ring-caption {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+/* ---------- ProgressBar ---------- */
+
+[data-design="relief"] .rl-bar {
+  height: 10px;
+  padding: 2px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--progress);
+}
+[data-design="relief"] .rl-bar-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* ---------- RatingSlider (vrai input range, stylé) ---------- */
+
+/* Zone tactile de 44px ; la piste de 14px et le curseur de 28px y sont centrés. */
+[data-design="relief"] .rl-slider {
+  position: relative;
+  height: 44px;
+}
+[data-design="relief"] .rl-slider-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 15px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--inset);
+}
+[data-design="relief"] .rl-slider-fill {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  bottom: 3px;
+  border-radius: var(--r-pill);
+  background: var(--progress);
+}
+[data-design="relief"] .rl-slider input {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+[data-design="relief"] .rl-slider input::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 44px;
+}
+[data-design="relief"] .rl-slider input::-moz-range-track {
+  background: transparent;
+}
+[data-design="relief"] .rl-slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  margin-top: 8px;
+  width: 28px;
+  height: 28px;
+  border: 4px solid var(--progress);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+[data-design="relief"] .rl-slider input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border: 4px solid var(--progress);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--e1);
+}
+
+/* ---------- SessionCard ---------- */
+
+[data-design="relief"] .rl-session {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+}
+[data-design="relief"] .rl-session:active {
+  box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* ---------- ExerciseCard ---------- */
+
+[data-design="relief"] .rl-exercise {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+[data-design="relief"] .rl-exercise-num {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  box-shadow: var(--pressed);
+  font-size: 14px;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-exercise-grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--progress-ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-exercise-grade svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+[data-design="relief"] .rl-consignes {
+  padding: 12px 16px;
+  border-radius: 16px;
+  box-shadow: var(--pressed);
+  font-size: 14px;
+  line-height: 20px;
+}
+[data-design="relief"] .rl-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+[data-design="relief"] .rl-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border-radius: 16px;
+  box-shadow: var(--e1);
+}
+[data-design="relief"] .rl-stat-value {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-stat-label {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .rl-grading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- LineChart ---------- */
+
+[data-design="relief"] .rl-chart-well {
+  padding: 12px 8px 8px;
+  border-radius: 20px;
+  box-shadow: var(--pressed);
+}
+
+/* ---------- Logo / Separator ---------- */
+
+[data-design="relief"] .rl-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 30px;
+  background: var(--surface);
+  border: var(--card-edge);
+  box-shadow: var(--e3);
+}
+[data-design="relief"] .rl-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+[data-design="relief"] .rl-separator::before,
+[data-design="relief"] .rl-separator::after {
+  content: "";
+  flex: 1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--pressed);
+}
+
+/* ---------- Chip (sélection d'exercices) ---------- */
+
+[data-design="relief"] .rl-chip {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--e1);
+}
+[data-design="relief"] .rl-chip:is([aria-pressed="true"], .rl-chip--selected) {
+  box-shadow: var(--pressed);
+  font-weight: 700;
+}

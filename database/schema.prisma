@@ -19,6 +19,11 @@ enum Role {
   ADMIN
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+}
+
 enum TypeCircuit {
   FORCE
   ENDURANCE
@@ -44,6 +49,12 @@ model Profil {
   participations CircuitParticipant[]
   exerciceNotes  ExerciceNote[]
 
+  // Abonnements : un coach a des abonnés, un sportif suit des coachs.
+  abonnes        CoachSubscription[] @relation("CoachAbonnes")
+  coachsSuivis   CoachSubscription[] @relation("SportifCoachs")
+
+  templates      CircuitTemplate[]
+
   @@map("profils")
 }
 
@@ -63,6 +74,25 @@ model Circuit {
   exercices Exercice[]
 
   @@map("circuits")
+}
+
+// Abonnement d'un sportif à un coach. Un coach ne peut ajouter à ses séances
+// que ses abonnés actifs. Un désabonnement passe le statut à CANCELLED sans
+// supprimer la ligne ni les participations passées (historique conservé).
+model CoachSubscription {
+  id        Int                @id @default(autoincrement())
+  status    SubscriptionStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  coachId   Int
+  coach     Profil @relation("CoachAbonnes", fields: [coachId], references: [id], onDelete: Cascade)
+  athleteId Int
+  athlete   Profil @relation("SportifCoachs", fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, athleteId])
+  @@index([athleteId])
+  @@map("coach_subscriptions")
 }
 
 model CircuitParticipant {
@@ -117,6 +147,50 @@ model ExerciceNote {
 
   @@unique([exerciceId, profilId])
   @@map("exercice_notes")
+}
+
+// Modèle de séance réutilisable, propre à un coach. Il ne contient que le
+// contenu de la séance (nom, type, difficulté, exercices) : ni date ni
+// participants. Les séances créées depuis un template en COPIENT le contenu,
+// donc modifier le template ne change pas les séances existantes.
+model CircuitTemplate {
+  id        Int          @id @default(autoincrement())
+  nom       String
+  niveau    String?
+  type      TypeCircuit?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  coachId Int
+  coach   Profil @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  exercices TemplateExercice[]
+
+  @@index([coachId])
+  @@map("circuit_templates")
+}
+
+// Exercice d'un template : mêmes paramètres qu'un exercice de séance, sans notes.
+model TemplateExercice {
+  id           Int     @id @default(autoincrement())
+  exercice     String
+  description  String?
+  consignes    String?
+  objectif     String?
+  series       Int?
+  nbRep        Int?
+  duree        Int?
+  tempsDeRepos Int?
+  tempo        String?
+  lest         Float?
+  amplitude    String?
+  url          String?
+  ordre        Int     @default(0)
+
+  templateId Int
+  template   CircuitTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("template_exercices")
 }
 
 model Muscle {

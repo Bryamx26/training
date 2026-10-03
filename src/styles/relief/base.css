@@ -1,0 +1,98 @@
+/* Design Relief — base et typographie. Tous les sélecteurs sont préfixés par
+   [data-design="relief"]. Ces règles sont hors @layer : elles passent devant
+   les utilitaires Tailwind sans toucher au design Tracé. */
+
+[data-design="relief"] body {
+  background-color: var(--surface);
+  color: var(--ink);
+  font-family: var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Les utilitaires partagés (font-display, text-display…) imposent une autre
+   police : en Relief, tout hérite de Manrope. */
+[data-design="relief"] body * {
+  font-family: inherit;
+}
+
+/* Les cartes des écrans sans variante dédiée prennent le relief e3. */
+[data-design="relief"] .card-surface {
+  background-color: var(--surface);
+  border: var(--card-edge);
+  border-radius: var(--r-card);
+  box-shadow: var(--e3);
+}
+
+/* Focus clavier visible sur tout élément interactif. */
+[data-design="relief"] :is(a, button, input, select, textarea, [role="radio"], [tabindex]):focus-visible {
+  outline: var(--focus);
+  outline-offset: 3px;
+}
+
+/* --- Typographie --- */
+
+[data-design="relief"] .rl-display {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-display--lg {
+  font-size: 36px;
+  line-height: 40px;
+}
+[data-design="relief"] .rl-title {
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-heading {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+[data-design="relief"] .rl-body {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+}
+[data-design="relief"] .rl-small {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .rl-label {
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-muted);
+}
+[data-design="relief"] .rl-metric {
+  font-size: 40px;
+  line-height: 44px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-metric-sm {
+  font-size: 26px;
+  line-height: 30px;
+  letter-spacing: -0.01em;
+  font-weight: 800;
+}
+[data-design="relief"] .rl-muted {
+  color: var(--ink-muted);
+}
+[data-design="relief"] .rl-progress-ink {
+  color: var(--progress-ink);
+}
+[data-design="relief"] .rl-info {
+  color: var(--info);
+}
+[data-design="relief"] .rl-danger {
+  color: var(--danger);
+}

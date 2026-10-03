@@ -11,6 +11,7 @@ services:
     environment:
       - PORT=4000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET doit être défini dans .env (voir .env.example)}
     volumes:
       - .:/workspace
       - api_node_modules:/workspace/api/node_modules

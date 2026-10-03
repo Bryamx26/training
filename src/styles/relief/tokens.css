@@ -1,0 +1,82 @@
+/* Design Relief — tokens.
+   Tout est scopé sous [data-design="relief"] : rien ne s'applique au design
+   Tracé. Le mode sombre de l'app est porté par la classe .dark sur <html>,
+   d'où [data-design="relief"].dark (valeurs sombres provisoires). */
+
+[data-design="relief"]:root {
+  --surface: #e6ebf1;          /* fond de page ET de tous les éléments en relief */
+  --ink: #1b2230;              /* texte principal (13:1) */
+  --ink-muted: #525c6c;        /* libellés, méta, onglets inactifs (5.6:1) */
+  --action: #161b26;           /* boutons principaux, avatars, bouton + */
+  --on-action: #ffffff;
+  --progress: #16a34a;         /* anneaux, barres, curseur, icône d'onglet actif */
+  --progress-ink: #13703a;     /* vert en texte : notes, %, tendance (5.1:1) */
+  --progress-track: #d3dae4;   /* piste des anneaux */
+  --info: #1d4ed8;             /* « À venir », liens, icône utilisateurs (5.6:1) */
+  --danger: #b42318;           /* supprimer, déconnexion (5.5:1) */
+  --chart-grid: #cfd6e0;
+
+  --shadow-dark: #a3b1c6b3;
+  --shadow-light: #ffffff;
+  --e1: 3px 3px 8px var(--shadow-dark), -3px -3px 8px var(--shadow-light);
+  --e2: 6px 6px 14px var(--shadow-dark), -6px -6px 14px var(--shadow-light);
+  --e3: 10px 10px 24px var(--shadow-dark), -10px -10px 24px var(--shadow-light);
+  --inset: inset 4px 4px 10px var(--shadow-dark), inset -4px -4px 10px var(--shadow-light);
+  --pressed: inset 2px 2px 5px var(--shadow-dark), inset -2px -2px 5px var(--shadow-light);
+  --card-edge: 1px solid #ffffff99;   /* liseré des cartes e3 */
+
+  --r-field: 16px; --r-tile: 22px; --r-card: 28px; --r-nav: 26px; --r-pill: 9999px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px;
+
+  --font: "Manrope", system-ui, sans-serif;
+  --focus: 2px solid var(--info);    /* outline, offset 3px */
+}
+
+[data-design="relief"]:root.dark {   /* provisoire */
+  --surface: #232831; --ink: #eef1f6; --ink-muted: #a3acba;
+  --action: #eef1f6; --on-action: #161b26;
+  --progress-ink: #4ade80; --progress-track: #2f3540;
+  --info: #93b4ff; --danger: #ff8a7a; --chart-grid: #39404c;
+  --shadow-dark: #16191fcc; --shadow-light: #2f3540;
+  --card-edge: 1px solid #ffffff0d;
+}
+
+/* Pont vers les tokens sémantiques de src/index.css (bg-card,
+   text-muted-foreground, shadow-[var(--shadow-card)]…), pour que les écrans
+   sans variante dédiée (formulaire de séance, utilisateurs, fiche sportif,
+   lecteur) adoptent aussi la palette Relief. --surface et --info portent déjà
+   le même nom des deux côtés. */
+[data-design="relief"]:root {
+  --radius: 12px; /* rounded-3xl = 28px (carte), rounded-2xl = 20px, rounded-xl = 16px */
+
+  --background: var(--surface);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--action);
+  --primary-foreground: var(--on-action);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --accent: var(--progress);
+  --accent-foreground: var(--on-action);
+
+  --muted: var(--progress-track);
+  --muted-foreground: var(--ink-muted);
+
+  --success: var(--progress-ink);
+  --warning: var(--danger);
+  --progress-mid: var(--progress);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--on-action);
+
+  --border: var(--chart-grid);
+  --input: var(--chart-grid);
+  --ring: var(--info);
+
+  --shadow-soft: var(--e1);
+  --shadow-card: var(--e3);
+  --shadow-lift: var(--e3);
+}

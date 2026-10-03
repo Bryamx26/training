@@ -1,4 +1,8 @@
 const prisma = require("../lib/prisma");
+const HttpError = require("../lib/httpError");
+const { isStaff, isAdmin, canViewCircuit } = require("../lib/permissions");
+const { assertSubscribedAthletes } = require("../lib/subscriptions");
+const { findManageableCircuit } = require("../lib/circuitAccess");
 
 const INCLUDE = {
   auteur: { select: { id: true, nom: true, prenom: true } },
@@ -7,7 +11,11 @@ const INCLUDE = {
 };
 
 async function list(req, res) {
-  const { profilId, auteurId } = req.query;
+  // Un sportif ne voit que les séances auxquelles il participe, un coach que les
+  // siennes ; seul un admin voit tout. Les filtres de la requête ne peuvent
+  // que restreindre ce périmètre.
+  const profilId = isStaff(req.user) ? req.query.profilId : req.user.id;
+  const auteurId = isAdmin(req.user) || !isStaff(req.user) ? req.query.auteurId : req.user.id;
 
   const where = {};
   if (profilId) where.personnes = { some: { profilId: Number(profilId) } };
@@ -27,14 +35,16 @@ async function getById(req, res) {
     include: INCLUDE,
   });
   if (!circuit) return res.status(404).json({ error: "Circuit introuvable" });
+  if (!canViewCircuit(req.user, circuit)) throw new HttpError(403, "Accès refusé", "FORBIDDEN");
   res.json(circuit);
 }
 
 async function create(req, res) {
-  const { nom, note, niveau, type, date, auteurId, participantIds, exercices } = req.body;
-  if (!nom || !type || !date || !auteurId) {
-    return res.status(400).json({ error: "nom, type, date et auteurId sont requis" });
+  const { nom, note, niveau, type, date, participantIds, exercices } = req.body;
+  if (!nom || !type || !date) {
+    return res.status(400).json({ error: "nom, type et date sont requis" });
   }
+  await assertSubscribedAthletes(req.user.id, participantIds ?? []);
 
   const circuit = await prisma.circuit.create({
     data: {
@@ -43,7 +53,8 @@ async function create(req, res) {
       niveau,
       type,
       date: new Date(date),
-      auteurId: Number(auteurId),
+      // L'auteur est toujours l'utilisateur connecté, pas une valeur envoyée par le client.
+      auteurId: req.user.id,
       personnes: participantIds
         ? { create: participantIds.map((profilId) => ({ profilId: Number(profilId) })) }
         : undefined,
@@ -74,6 +85,7 @@ async function create(req, res) {
 
 async function update(req, res) {
   const { nom, note, niveau, type, date } = req.body;
+  await findManageableCircuit(req.user, req.params.id);
 
   const circuit = await prisma.circuit.update({
     where: { id: Number(req.params.id) },
@@ -84,6 +96,7 @@ async function update(req, res) {
 }
 
 async function remove(req, res) {
+  await findManageableCircuit(req.user, req.params.id);
   await prisma.circuit.delete({ where: { id: Number(req.params.id) } });
   res.status(204).send();
 }
@@ -94,6 +107,13 @@ async function setParticipants(req, res) {
   if (!Array.isArray(participantIds)) {
     return res.status(400).json({ error: "participantIds doit être un tableau" });
   }
+  const circuit = await findManageableCircuit(req.user, circuitId);
+
+  // Seuls les sportifs AJOUTÉS doivent être abonnés à l'auteur de la séance :
+  // un participant déjà présent reste dans la séance même s'il s'est désabonné.
+  const currentIds = circuit.personnes.map((p) => p.profilId);
+  const addedIds = participantIds.map(Number).filter((pid) => !currentIds.includes(pid));
+  await assertSubscribedAthletes(circuit.auteurId, addedIds);
 
   await prisma.$transaction([
     prisma.circuitParticipant.deleteMany({ where: { circuitId } }),
@@ -102,14 +122,16 @@ async function setParticipants(req, res) {
     }),
   ]);
 
-  const circuit = await prisma.circuit.findUnique({ where: { id: circuitId }, include: INCLUDE });
-  res.json(circuit);
+  const updated = await prisma.circuit.findUnique({ where: { id: circuitId }, include: INCLUDE });
+  res.json(updated);
 }
 
 async function addParticipant(req, res) {
   const circuitId = Number(req.params.id);
   const { profilId } = req.body;
   if (!profilId) return res.status(400).json({ error: "profilId est requis" });
+  const circuit = await findManageableCircuit(req.user, circuitId);
+  await assertSubscribedAthletes(circuit.auteurId, [profilId]);
 
   const participant = await prisma.circuitParticipant.create({
     data: { circuitId, profilId: Number(profilId) },
@@ -120,6 +142,7 @@ async function addParticipant(req, res) {
 async function removeParticipant(req, res) {
   const circuitId = Number(req.params.id);
   const profilId = Number(req.params.profilId);
+  await findManageableCircuit(req.user, circuitId);
 
   await prisma.circuitParticipant.delete({
     where: { circuitId_profilId: { circuitId, profilId } },

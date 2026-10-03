@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2, Pencil, X } from "lucide-react";
-import { profils as profilsApi } from "../lib/api";
+import { profils as profilsApi, me as meApi } from "../lib/api";
 import TopAppBar from "../components/layout/TopAppBar";
 import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
@@ -83,7 +83,8 @@ function AdminUsers() {
   const [formTarget, setFormTarget] = useState(null); // null = closed, {} = create, {id,...} = edit
 
   function reload() {
-    profilsApi.list().then((all) => setUsers(all.filter((p) => p.role === "USER")));
+    // Un coach ne gère que ses abonnés actifs ; un sportif créé ici lui est abonné d'office.
+    meApi.subscribers().then(setUsers);
   }
 
   useEffect(reload, []);
@@ -119,7 +120,7 @@ function AdminUsers() {
         {formTarget && <UserForm initial={formTarget.id ? formTarget : null} onCancel={() => setFormTarget(null)} onSaved={handleSaved} />}
 
         {!users && <Loading />}
-        {users && users.length === 0 && !formTarget && <EmptyState title="Aucun sportif" subtitle="Ajoute ton premier sportif." />}
+        {users && users.length === 0 && !formTarget && <EmptyState title="Aucun abonné" subtitle="Les sportifs s'abonnent à toi depuis Social, ou ajoute-en un ici." />}
 
         {users?.map((u) => (
           <div key={u.id} className="card-surface flex items-center gap-3 p-4">

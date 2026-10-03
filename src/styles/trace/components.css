@@ -1,0 +1,837 @@
+/* Design Tracé — composants. Les classes st-* sont posées sur le markup
+   partagé (neutres en Classique) ou rendues par src/components/trace/. */
+
+/* ---------- AppShell / TopAppBar ---------- */
+
+[data-design="trace"] .st-topbar {
+  padding: 24px 20px 16px;
+  gap: 12px;
+  background: var(--paper);
+  backdrop-filter: none;
+}
+[data-design="trace"] .st-topbar-title {
+  font-size: 32px;
+  line-height: 36px;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+[data-design="trace"] .st-topbar-title--sm {
+  font-size: 28px;
+  line-height: 32px;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- TabBar ---------- */
+
+[data-design="trace"] .st-tabbar {
+  background: var(--paper-raised);
+  border-top: 1px solid var(--line);
+  padding: 8px 8px max(24px, env(safe-area-inset-bottom));
+}
+[data-design="trace"] .st-tabbar-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 0;
+}
+[data-design="trace"] .st-tab {
+  min-height: 52px;
+  padding: 0;
+  gap: 4px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-tab-icon svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+[data-design="trace"] .st-tab-label {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-tab[aria-current="page"] .st-tab-icon {
+  background: var(--volt);
+  color: var(--on-volt);
+}
+[data-design="trace"] .st-tab[aria-current="page"] .st-tab-label {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ---------- Button ---------- */
+
+[data-design="trace"] .st-button {
+  height: 52px;
+  padding: 0 20px;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 700;
+  box-shadow: none;
+}
+[data-design="trace"] .st-button svg {
+  width: 18px;
+  height: 18px;
+}
+[data-design="trace"] .st-button:has(.st-button-trailing) {
+  justify-content: space-between;
+}
+[data-design="trace"] .st-button-leading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+[data-design="trace"] .st-button-trailing {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+[data-design="trace"] .st-button--lg {
+  height: 56px;
+}
+[data-design="trace"] .st-button--sm {
+  height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+[data-design="trace"] .st-button--primary {
+  background: var(--volt);
+  color: var(--on-volt);
+}
+[data-design="trace"] .st-button--secondary,
+[data-design="trace"] .st-button--dark {
+  background: var(--slab);
+  color: var(--on-slab);
+}
+[data-design="trace"] .st-button--outline {
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+[data-design="trace"] .st-button--danger {
+  background: var(--signal);
+  color: var(--on-signal);
+}
+[data-design="trace"] .st-button--ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* ---------- IconButton ---------- */
+
+[data-design="trace"] .st-iconbutton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  box-shadow: none;
+}
+[data-design="trace"] .st-iconbutton svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+[data-design="trace"] .st-iconbutton--danger {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+[data-design="trace"] .st-iconbutton--primary {
+  width: 48px;
+  height: 48px;
+  background: var(--volt);
+  color: var(--on-volt);
+  border-color: var(--volt);
+}
+[data-design="trace"] .st-iconbutton--on-slab {
+  background: transparent;
+  border-color: var(--slab-track);
+  color: var(--on-slab);
+}
+
+/* ---------- Field / SearchField ---------- */
+
+[data-design="trace"] .st-field {
+  gap: 8px;
+}
+[data-design="trace"] .st-field-label {
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-input {
+  height: 48px;
+  padding: 0 14px;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: none;
+}
+[data-design="trace"] textarea.st-input {
+  height: auto;
+  min-height: 72px;
+  padding: 12px 14px;
+  line-height: 22px;
+  resize: none;
+}
+[data-design="trace"] .st-input:is([type="email"], [type="number"]) {
+  font-family: var(--font-mono);
+}
+[data-design="trace"] .st-input:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: var(--focus-ring);
+}
+[data-design="trace"] .st-input::placeholder {
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-search {
+  position: relative;
+}
+[data-design="trace"] .st-search .st-input {
+  padding-left: 42px;
+}
+[data-design="trace"] .st-search-icon {
+  left: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ---------- SegmentedControl ---------- */
+
+[data-design="trace"] .st-segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+[data-design="trace"] .st-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-segment + .st-segment {
+  border-left: 1px solid var(--ink);
+}
+[data-design="trace"] .st-segment:is([aria-checked="true"], [aria-pressed="true"]) {
+  background: var(--slab);
+  color: var(--on-slab);
+  font-weight: 700;
+}
+
+/* ---------- FilterChips ---------- */
+
+[data-design="trace"] .st-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+[data-design="trace"] .st-chip {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-chip[aria-pressed="true"] {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+}
+
+/* ---------- TypeTag / StatusPill ---------- */
+
+[data-design="trace"] .st-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-xs);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+}
+[data-design="trace"] .st-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--paper);
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-pill--cobalt {
+  background: var(--cobalt-soft);
+  color: var(--cobalt);
+}
+[data-design="trace"] .st-pill--done {
+  background: var(--slab);
+  color: var(--on-slab);
+}
+
+/* ---------- Avatar ---------- */
+
+[data-design="trace"] .st-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--slab);
+  color: var(--on-slab);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-avatar--volt {
+  background: var(--volt);
+  color: var(--on-volt);
+}
+[data-design="trace"] .st-avatar--lg {
+  font-size: 22px;
+}
+
+/* ---------- Card / ListGroup ---------- */
+
+[data-design="trace"] .st-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  box-shadow: none;
+}
+[data-design="trace"] .st-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+[data-design="trace"] .st-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  text-align: left;
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+}
+[data-design="trace"] .st-row:last-child {
+  border-bottom: 0;
+}
+[data-design="trace"] .st-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+[data-design="trace"] .st-row-title {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-design="trace"] .st-row-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-row-value {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-row-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+[data-design="trace"] .st-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--cobalt);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---------- Slab (aplats sombres) ---------- */
+
+[data-design="trace"] .st-slab {
+  background: var(--slab);
+  color: var(--on-slab);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+}
+[data-design="trace"] .st-slab .t-label {
+  color: var(--on-slab-muted);
+}
+[data-design="trace"] .st-volt-text {
+  color: var(--volt);
+}
+[data-design="trace"] .st-volt-ink {
+  color: var(--volt-ink);
+}
+[data-design="trace"] .st-cobalt-text {
+  color: var(--cobalt);
+}
+
+/* ---------- SegmentBar / ProgressRow ---------- */
+
+[data-design="trace"] .st-segbar {
+  display: grid;
+  gap: 3px;
+  height: 8px;
+}
+[data-design="trace"] .st-segbar > span {
+  background: var(--slab-track);
+}
+[data-design="trace"] .st-segbar > span.is-filled {
+  background: var(--volt);
+}
+[data-design="trace"] .st-progressrow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+[data-design="trace"] .st-progressrow-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 18px;
+}
+[data-design="trace"] .st-progressrow-track {
+  height: 8px;
+  background: var(--slab-track);
+}
+[data-design="trace"] .st-progressrow-fill {
+  height: 100%;
+  background: var(--volt);
+}
+
+/* ---------- KpiTile ---------- */
+
+[data-design="trace"] .st-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+[data-design="trace"] .st-kpi--featured {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+}
+[data-design="trace"] .st-kpi--featured .t-label {
+  color: var(--on-slab-muted);
+}
+[data-design="trace"] .st-kpi--featured .t-metric {
+  color: var(--volt);
+}
+[data-design="trace"] .st-kpi-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-kpi--featured .st-kpi-sub {
+  color: var(--on-slab-muted);
+}
+
+/* ---------- DateBlock / SessionCard ---------- */
+
+[data-design="trace"] .st-session {
+  display: flex;
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+}
+[data-design="trace"] .st-dateblock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 72px;
+  background: var(--slab);
+  gap: 2px;
+}
+[data-design="trace"] .st-dateblock-day {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  line-height: 30px;
+  font-weight: 600;
+  color: var(--on-slab);
+}
+[data-design="trace"] .st-dateblock .t-label {
+  color: var(--on-slab-muted);
+}
+[data-design="trace"] .st-session-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+[data-design="trace"] .st-session-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+[data-design="trace"] .st-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-meta svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ---------- ScorePanel ---------- */
+
+[data-design="trace"] .st-scorepanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+[data-design="trace"] .st-scorepanel-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+[data-design="trace"] .st-scorepanel-figures {
+  display: flex;
+  gap: 20px;
+  text-align: right;
+}
+[data-design="trace"] .st-scorepanel-figure {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+/* ---------- ExerciseCard ---------- */
+
+[data-design="trace"] .st-exercise {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+[data-design="trace"] .st-exercise-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+[data-design="trace"] .st-exercise-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: var(--slab);
+  color: var(--on-slab);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-exercise-grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: var(--volt-ink);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 15px;
+}
+[data-design="trace"] .st-exercise-grade svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+[data-design="trace"] .st-exercise-summary {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-exercise-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+[data-design="trace"] .st-consignes {
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+[data-design="trace"] .st-statgrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--line);
+}
+[data-design="trace"] .st-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 4px;
+}
+[data-design="trace"] .st-stat + .st-stat {
+  border-left: 1px solid var(--line);
+}
+[data-design="trace"] .st-stat-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-grading {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- RatingPicker ---------- */
+
+[data-design="trace"] .st-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+[data-design="trace"] .st-rating-value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--volt-ink);
+}
+[data-design="trace"] .st-rating-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+[data-design="trace"] .st-rating-cell {
+  height: 32px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+[data-design="trace"] .st-rating-cell.is-below {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+}
+[data-design="trace"] .st-rating-cell[aria-checked="true"] {
+  background: var(--volt);
+  border-color: var(--volt);
+  color: var(--on-volt);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+/* ---------- AthleteToggle ---------- */
+
+[data-design="trace"] .st-athletes {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+[data-design="trace"] .st-athlete {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 44px;
+  padding: 0 14px 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+[data-design="trace"] .st-athlete[aria-pressed="true"] {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+  font-weight: 700;
+}
+
+/* ---------- BrandMark ---------- */
+
+[data-design="trace"] .st-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+[data-design="trace"] .st-brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: var(--volt);
+  color: var(--on-volt);
+}
+
+/* ---------- HeroBand ---------- */
+
+[data-design="trace"] .st-hero {
+  position: relative;
+  overflow: hidden;
+  background: var(--slab);
+  flex-shrink: 0;
+}
+[data-design="trace"] .st-hero > * {
+  position: absolute;
+}
+[data-design="trace"] .st-hero-volt {
+  display: grid;
+  grid-template-columns: repeat(3, 24px);
+  place-content: center;
+  gap: 8px;
+  background: var(--volt);
+  color: var(--on-volt);
+}
+[data-design="trace"] .st-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--slab-track);
+  color: var(--volt);
+}
+[data-design="trace"] .st-hero svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 3;
+}
+
+/* ---------- Charts ---------- */
+
+[data-design="trace"] .st-chart text {
+  font-family: var(--font-mono);
+}
+
+/* ---------- Apparence (sélecteur de design) ---------- */
+
+[data-design="trace"] .st-thumb {
+  border-radius: var(--radius-xs);
+  outline: 1px solid var(--line);
+}
+
+[data-design="trace"] .st-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+[data-design="trace"] .st-divider::before,
+[data-design="trace"] .st-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---------- Chip d'un exercice déjà ajouté (sélection d'exercices) ---------- */
+
+[data-design="trace"] .st-chip--selected {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+}

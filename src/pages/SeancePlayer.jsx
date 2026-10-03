@@ -40,6 +40,8 @@ function SeancePlayer() {
       .then((c) => {
         setCircuit(c);
         setSeriesLeft(c.exercices.map((ex) => (ex.series > 0 ? ex.series : 1)));
+        const first = c.exercices[0];
+        setRemaining(first && first.duree > 0 ? first.duree : null);
       })
       .catch((e) => setError(e.message));
   }, [id]);
@@ -55,20 +57,20 @@ function SeancePlayer() {
     return null;
   }
 
-  // Initialise le compte à rebours à chaque changement d'exercice ou de phase.
-  useEffect(() => {
-    if (!current) return;
-    if (phase === "exercice") {
-      setRemaining(current.duree > 0 ? current.duree : null);
-    } else if (phase === "repos") {
-      setRemaining(current.tempsDeRepos > 0 ? current.tempsDeRepos : null);
-    }
-  }, [currentIndex, phase, current]);
+  // Change de phase et initialise le compte à rebours dans la même mise à jour,
+  // pour qu'aucun rendu n'associe la nouvelle phase à l'ancien temps restant
+  // (sinon le minuteur voit remaining=0 en repos et saute le repos).
+  function startPhase(nextPhase, idx) {
+    const ex = exercices[idx];
+    const secs = nextPhase === "repos" ? ex.tempsDeRepos : ex.duree;
+    setCurrentIndex(idx);
+    setPhase(nextPhase);
+    setRemaining(secs > 0 ? secs : null);
+  }
 
   function goToNext() {
     if (phase === "repos") {
-      setCurrentIndex(findNextIndex(currentIndex, seriesLeft));
-      setPhase("exercice");
+      startPhase("exercice", findNextIndex(currentIndex, seriesLeft));
       return;
     }
 
@@ -79,10 +81,9 @@ function SeancePlayer() {
     if (!left.some((n) => n > 0)) {
       setPhase("fin");
     } else if (current.tempsDeRepos > 0) {
-      setPhase("repos");
+      startPhase("repos", currentIndex);
     } else {
-      setCurrentIndex(findNextIndex(currentIndex, left));
-      setPhase("exercice");
+      startPhase("exercice", findNextIndex(currentIndex, left));
     }
   }
 

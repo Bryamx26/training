@@ -110,9 +110,21 @@ async function seedDemoCircuit(admin, sportif) {
   console.log("✔ Séance de démo créée (Renforcement)");
 }
 
+// Lea est abonnée au coach de test. `update: {}` : un désabonnement fait
+// depuis l'app n'est pas annulé au redémarrage suivant.
+async function seedDemoSubscription(admin, sportif) {
+  await prisma.coachSubscription.upsert({
+    where: { coachId_athleteId: { coachId: admin.id, athleteId: sportif.id } },
+    update: {},
+    create: { coachId: admin.id, athleteId: sportif.id, status: "ACTIVE" },
+  });
+  console.log("✔ Abonnement de démo (Lea -> Coach)");
+}
+
 async function main() {
   await seedMuscles();
   const { admin, sportif } = await seedTestUsers();
+  await seedDemoSubscription(admin, sportif);
   await seedDemoCircuit(admin, sportif);
 }
 

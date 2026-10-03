@@ -1,0 +1,5 @@
+/* Design Relief (par défaut) : chargé en permanence, mais chaque règle est
+   scopée sous [data-design="relief"] et reste donc inerte en design Tracé. */
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";

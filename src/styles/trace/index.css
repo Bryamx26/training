@@ -1,0 +1,5 @@
+/* Design Tracé : chargé en permanence, mais chaque règle est scopée sous
+   [data-design="trace"] et reste donc inerte en design Classique. */
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";

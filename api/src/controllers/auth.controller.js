@@ -2,19 +2,14 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { OAuth2Client } = require("google-auth-library");
 const prisma = require("../lib/prisma");
+const { signToken } = require("../lib/token");
 
-const PUBLIC_FIELDS = {
-  id: true,
-  nom: true,
-  prenom: true,
-  mail: true,
-  poids: true,
-  taille: true,
-  age: true,
-  blessures: true,
-  role: true,
-  createdAt: true,
-};
+// Réponse commune aux deux modes de connexion : le jeton de session et le
+// profil public (sans le hash du mot de passe).
+function sessionResponse(profil) {
+  const { motDePasse: _omit, ...publicProfil } = profil;
+  return { token: signToken(profil.id), profil: publicProfil };
+}
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
@@ -31,8 +26,7 @@ async function login(req, res) {
   const valid = await bcrypt.compare(motDePasse, profil.motDePasse);
   if (!valid) return res.status(401).json({ error: "Identifiants invalides" });
 
-  const { motDePasse: _omit, ...publicProfil } = profil;
-  res.json(publicProfil);
+  res.json(sessionResponse(profil));
 }
 
 // Connexion via Google : vérifie le jeton d'identité auprès de Google, puis
@@ -67,8 +61,7 @@ async function google(req, res) {
     });
   }
 
-  const { motDePasse: _omit, ...publicProfil } = profil;
-  res.json(publicProfil);
+  res.json(sessionResponse(profil));
 }
 
 module.exports = { login, google };
