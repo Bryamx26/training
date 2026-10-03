@@ -1,6 +1,8 @@
 import { Star } from "lucide-react";
 import Button from "../ui/Button";
 import RatingSlider from "./RatingSlider";
+import WeightVestIcon from "../ui/WeightVestIcon";
+import { formatLest } from "../../lib/exerciceForm";
 
 function StatTile({ label, value }) {
   return (
@@ -16,6 +18,7 @@ function summary(ex) {
   const parts = [];
   if (ex.series || ex.nbRep) parts.push([ex.series, ex.nbRep].filter(Boolean).join(" × "));
   if (ex.objectif) parts.push(`objectif ${ex.objectif}`);
+  if (formatLest(ex.lest)) parts.push(`lest ${formatLest(ex.lest)}`);
   return parts.join(" · ");
 }
 
@@ -44,6 +47,15 @@ function ExerciseCard({ exercice, index, editable, grade, note, setNote, comment
         <p className="rl-body">
           <span className="font-bold">Objectif : </span>
           {exercice.objectif}
+        </p>
+      )}
+      {formatLest(exercice.lest) && (
+        <p className="rl-body flex items-center gap-2">
+          <WeightVestIcon className="w-4 h-4 rl-progress-ink" />
+          <span>
+            <span className="font-bold">Lest : </span>
+            {formatLest(exercice.lest)}
+          </span>
         </p>
       )}
       {exercice.description && <p className="rl-body rl-muted">{exercice.description}</p>}

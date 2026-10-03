@@ -5,6 +5,7 @@ import Input, { Textarea, Select } from "../ui/Input";
 import DifficultySelect from "./DifficultySelect";
 import ExercicePicker from "./ExercicePicker";
 import ExerciceOrderList from "./ExerciceOrderList";
+import WeightVestIcon from "../ui/WeightVestIcon";
 import { TYPES, exerciceDraft } from "../../lib/exerciceForm";
 
 // Nombre de fiches d'exercice affichées avant « Voir les autres », pour alléger le formulaire.
@@ -24,7 +25,16 @@ function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance",
   const nbMasques = nbExercices - APERCU_EXERCICES;
 
   function updateExercice(key, field, v) {
-    onChange({ ...value, exercices: value.exercices.map((ex) => (ex.key === key ? { ...ex, [field]: v } : ex)) });
+    patchExercice(key, { [field]: v });
+  }
+
+  function patchExercice(key, patch) {
+    onChange({ ...value, exercices: value.exercices.map((ex) => (ex.key === key ? { ...ex, ...patch } : ex)) });
+  }
+
+  // Bouton gilet lesté : affiche le champ de poids, ou le masque en retirant le lest.
+  function toggleLest(ex) {
+    patchExercice(ex.key, ex.avecLest ? { avecLest: false, lest: "" } : { avecLest: true });
   }
 
   function addExercice(entry) {
@@ -85,9 +95,21 @@ function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance",
                 <span className="text-sm font-bold truncate">
                   {i + 1}. {ex.exercice}
                 </span>
-                <button type="button" onClick={() => removeExercice(ex.key)} className="press p-2" aria-label={`Retirer ${ex.exercice}`}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleLest(ex)}
+                    aria-pressed={ex.avecLest}
+                    aria-label={ex.avecLest ? `Retirer le lest de ${ex.exercice}` : `Ajouter du lest à ${ex.exercice}`}
+                    title={ex.avecLest ? "Retirer le lest" : "Ajouter du lest"}
+                    className="press flex items-center justify-center w-9 h-9 rounded-full bg-secondary st-iconbutton st-toggle"
+                  >
+                    <WeightVestIcon className="w-5 h-5" />
+                  </button>
+                  <button type="button" onClick={() => removeExercice(ex.key)} className="press p-2" aria-label={`Retirer ${ex.exercice}`}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </button>
+                </div>
               </div>
               <Textarea placeholder="Consignes" rows={2} value={ex.consignes} onChange={(e) => updateExercice(ex.key, "consignes", e.target.value)} />
               <Input placeholder="Objectif" value={ex.objectif} onChange={(e) => updateExercice(ex.key, "objectif", e.target.value)} />
@@ -97,6 +119,19 @@ function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance",
                 <Input aria-label="Durée (s)" placeholder="Durée(s)" inputMode="numeric" value={ex.duree} onChange={(e) => updateExercice(ex.key, "duree", e.target.value)} />
                 <Input aria-label="Repos (s)" placeholder="Repos(s)" inputMode="numeric" value={ex.tempsDeRepos} onChange={(e) => updateExercice(ex.key, "tempsDeRepos", e.target.value)} />
               </div>
+              {ex.avecLest && (
+                <Input
+                  label="Lest (kg)"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  inputMode="decimal"
+                  placeholder="Ex : 10"
+                  value={ex.lest}
+                  onChange={(e) => updateExercice(ex.key, "lest", e.target.value)}
+                  required
+                />
+              )}
             </div>
           ))}
           {nbMasques > 0 && (

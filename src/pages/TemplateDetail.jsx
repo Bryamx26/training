@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { templates as templatesApi } from "../lib/api";
-import { TYPE_LABEL } from "../lib/exerciceForm";
+import { TYPE_LABEL, formatLest } from "../lib/exerciceForm";
 import TopAppBar from "../components/layout/TopAppBar";
 import { Loading, ErrorState } from "../components/ui/States";
 import TemplateActions from "../components/templates/TemplateActions";
@@ -13,6 +13,7 @@ function params(ex) {
     ex.nbRep && `${ex.nbRep} reps`,
     ex.duree && `${ex.duree} s`,
     ex.tempsDeRepos && `repos ${ex.tempsDeRepos} s`,
+    formatLest(ex.lest) && `lest ${formatLest(ex.lest)}`,
   ]
     .filter(Boolean)
     .join(" · ");

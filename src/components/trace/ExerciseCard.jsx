@@ -1,5 +1,7 @@
 import { Star } from "lucide-react";
 import RatingPicker from "./RatingPicker";
+import WeightVestIcon from "../ui/WeightVestIcon";
+import { formatLest } from "../../lib/exerciceForm";
 
 function StatCell({ label, value }) {
   return (
@@ -15,6 +17,7 @@ function summary(ex) {
   if (ex.series || ex.nbRep) parts.push([ex.series, ex.nbRep].filter(Boolean).join(" × "));
   if (ex.duree) parts.push(`${ex.duree}s`);
   if (ex.tempsDeRepos) parts.push(`repos ${ex.tempsDeRepos}s`);
+  if (formatLest(ex.lest)) parts.push(formatLest(ex.lest));
   return parts.join(" · ");
 }
 
@@ -39,12 +42,21 @@ function ExerciseCard({ exercice, index, editable, grade, note, setNote, comment
         )}
       </div>
 
-      {(exercice.objectif || exercice.description || exercice.consignes || (!editable && grade?.commentaire)) && (
+      {(exercice.objectif || formatLest(exercice.lest) || exercice.description || exercice.consignes || (!editable && grade?.commentaire)) && (
         <div className="st-exercise-body">
           {exercice.objectif && (
             <div className="flex flex-col gap-1">
               <span className="t-label">Objectif</span>
               <span className="t-mono text-[14px]">{exercice.objectif}</span>
+            </div>
+          )}
+          {formatLest(exercice.lest) && (
+            <div className="flex flex-col gap-1">
+              <span className="t-label">Lest</span>
+              <span className="t-mono text-[14px] flex items-center gap-2">
+                <WeightVestIcon className="w-4 h-4" />
+                {formatLest(exercice.lest)}
+              </span>
             </div>
           )}
           {exercice.description && <p className="t-body">{exercice.description}</p>}

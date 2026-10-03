@@ -12,7 +12,7 @@ export const TYPES = [
 
 export const TYPE_LABEL = Object.fromEntries(TYPES.map((t) => [t.value, t.label]));
 
-const PARAMS = ["description", "consignes", "objectif", "series", "nbRep", "duree", "tempsDeRepos"];
+const PARAMS = ["description", "consignes", "objectif", "series", "nbRep", "duree", "tempsDeRepos", "lest"];
 
 // Clé React stable : deux exercices peuvent porter le même nom.
 let nextKey = 0;
@@ -25,6 +25,8 @@ function newKey() {
 export function exerciceDraft(source = {}) {
   const draft = { key: newKey(), exercice: source.exercice ?? "" };
   for (const field of PARAMS) draft[field] = source[field] ?? "";
+  // État d'interface (non envoyé à l'API) : le champ de lest est affiché.
+  draft.avecLest = draft.lest !== "";
   return draft;
 }
 
@@ -44,8 +46,17 @@ export function exerciceToApi(ex, ordre) {
     nbRep: num(ex.nbRep),
     duree: num(ex.duree),
     tempsDeRepos: num(ex.tempsDeRepos),
+    // Lest en kg (virgule acceptée). null, pas undefined : retirer le lest d'un
+    // exercice existant doit l'effacer en base.
+    lest: ex.lest === "" || ex.lest === null || ex.lest === undefined ? null : Number(String(ex.lest).replace(",", ".")),
     ordre,
   };
+}
+
+// « 10 kg », « 2,5 kg » : lest affiché, ou null si l'exercice n'est pas lesté.
+export function formatLest(lest) {
+  if (lest === null || lest === undefined || lest === "") return null;
+  return `${String(lest).replace(".", ",")} kg`;
 }
 
 export function sameName(a, b) {

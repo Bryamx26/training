@@ -835,3 +835,11 @@
   border-color: var(--slab);
   color: var(--on-slab);
 }
+
+/* ---------- Bouton bascule (ex. lest d'un exercice) ---------- */
+
+[data-design="trace"] .st-toggle[aria-pressed="true"] {
+  background: var(--slab);
+  border-color: var(--slab);
+  color: var(--on-slab);
+}

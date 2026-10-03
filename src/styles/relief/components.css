@@ -691,3 +691,10 @@
   box-shadow: var(--pressed);
   font-weight: 700;
 }
+
+/* ---------- Bouton bascule (ex. lest d'un exercice) ---------- */
+
+[data-design="relief"] .st-toggle[aria-pressed="true"] {
+  box-shadow: var(--pressed);
+  color: var(--progress-ink);
+}

@@ -4,6 +4,7 @@ import { Pause, Play, SkipForward, X } from "lucide-react";
 import { circuits as circuitsApi } from "../lib/api";
 import Button from "../components/ui/Button";
 import { Loading, ErrorState, EmptyState } from "../components/ui/States";
+import { formatLest } from "../lib/exerciceForm";
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -15,6 +16,7 @@ function roundLabel(exercice, roundsLeft) {
   const parts = [];
   if (exercice.series > 0) parts.push(`Série ${exercice.series - roundsLeft + 1}/${exercice.series}`);
   if (exercice.nbRep) parts.push(`${exercice.nbRep} reps`);
+  if (formatLest(exercice.lest)) parts.push(`lest ${formatLest(exercice.lest)}`);
   return parts.join(" · ");
 }
 
