@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" font-family="Manrope, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Infrastructure de Sport Track</title>
+  <style>
+    @font-face { font-family: "Manrope"; font-weight: 500; src: url("../node_modules/@fontsource/manrope/files/manrope-latin-500-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Manrope"; font-weight: 700; src: url("../node_modules/@fontsource/manrope/files/manrope-latin-700-normal.woff2") format("woff2"); }
+    @font-face { font-family: "Manrope"; font-weight: 800; src: url("../node_modules/@fontsource/manrope/files/manrope-latin-800-normal.woff2") format("woff2"); }
+    .title { font-size: 34px; font-weight: 800; fill: #1b2230; letter-spacing: -0.5px; }
+    .subtitle { font-size: 17px; font-weight: 500; fill: #525c6c; }
+    .h { font-size: 19px; font-weight: 800; fill: #1b2230; }
+    .hw { font-size: 19px; font-weight: 800; fill: #ffffff; }
+    .t { font-size: 15px; font-weight: 500; fill: #1b2230; }
+    .m { font-size: 14px; font-weight: 500; fill: #525c6c; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 13.5px; fill: #1b2230; }
+    .label { font-size: 13px; font-weight: 800; fill: #525c6c; letter-spacing: 1.4px; }
+    .flow { font-size: 14px; font-weight: 700; fill: #1b2230; }
+    .flowm { font-size: 13px; font-weight: 500; fill: #525c6c; }
+    .tag { font-size: 12px; font-weight: 800; letter-spacing: 0.8px; fill: #1d4ed8; }
+    .b { font-weight: 800; }
+    .tw { fill: #ffffff; }
+    .mw { fill: #b9c2d0; }
+    .volt { fill: #d6ff3d; }
+    .green { fill: #16a34a; }
+    .blue { fill: #1d4ed8; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b2230"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrowB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/>
+    </marker>
+    <marker id="arrowM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a94a6"/>
+    </marker>
+  </defs>
+
+  <rect width="1800" height="1120" fill="#f4f6f9"/>
+
+  <!-- Titre -->
+  <text x="40" y="58" class="title">Sport Track — infrastructure de production</text>
+  <text x="40" y="88" class="subtitle">Une machine, deux sous-domaines HTTPS, deux conteneurs Docker et une base SQLite</text>
+
+  <!-- ============ Utilisateurs ============ -->
+  <rect x="40" y="130" width="400" height="560" rx="22" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="64" y="166" class="label">UTILISATEURS</text>
+  <text x="64" y="198" class="h">Navigateur ou PWA installée</text>
+  <text x="64" y="222" class="m">téléphone, tablette, ordinateur</text>
+
+  <rect x="64" y="246" width="352" height="96" rx="14" fill="#e6ebf1"/>
+  <text x="84" y="276" class="t b">Application React 19</text>
+  <text x="84" y="300" class="m">sportifs, coachs, admins</text>
+  <text x="84" y="322" class="m">deux designs : Relief et Tracé</text>
+
+  <rect x="64" y="356" width="352" height="96" rx="14" fill="#e6ebf1"/>
+  <text x="84" y="386" class="t b">Service worker (Workbox)</text>
+  <text x="84" y="410" class="m">fonctionne hors ligne : écrans et</text>
+  <text x="84" y="432" class="m">données de l'API gardés en cache</text>
+
+  <rect x="64" y="466" width="352" height="96" rx="14" fill="#e6ebf1"/>
+  <text x="84" y="496" class="t b">Stockage local</text>
+  <text x="84" y="520" class="m">profil affiché et séances terminées</text>
+  <text x="84" y="542" class="m">hors ligne, envoyées au retour du réseau</text>
+
+  <rect x="64" y="576" width="352" height="90" rx="14" fill="#161b26"/>
+  <text x="84" y="606" class="t b tw">Cookie de session httpOnly</text>
+  <text x="84" y="630" class="m mw">jeton JWT (7 jours), illisible par la page,</text>
+  <text x="84" y="651" class="m mw">envoyé seulement à l'API</text>
+
+  <!-- ============ Google ============ -->
+  <rect x="560" y="130" width="300" height="104" rx="18" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="584" y="164" class="label">SERVICE EXTERNE</text>
+  <text x="584" y="194" class="h">Google Identity</text>
+  <text x="584" y="218" class="m">connexion avec un compte Google</text>
+
+  <!-- ============ Serveur ============ -->
+  <rect x="520" y="300" width="1240" height="610" rx="26" fill="#ffffff" stroke="#1b2230" stroke-width="2"/>
+  <text x="548" y="338" class="label">SERVEUR DE PRODUCTION</text>
+
+  <!-- Reverse proxy -->
+  <rect x="548" y="364" width="300" height="300" rx="18" fill="#e6ebf1"/>
+  <text x="570" y="398" class="h">Reverse proxy HTTPS</text>
+  <text x="570" y="422" class="m">sur la machine (certificats TLS)</text>
+  <rect x="570" y="446" width="256" height="84" rx="12" fill="#ffffff"/>
+  <text x="586" y="474" class="t b">FRONT_URL</text>
+  <text x="586" y="498" class="mono">→ 127.0.0.1:80</text>
+  <text x="586" y="518" class="m">vers le conteneur web</text>
+  <rect x="570" y="546" width="256" height="96" rx="12" fill="#ffffff"/>
+  <text x="586" y="574" class="t b">API_URL</text>
+  <text x="586" y="598" class="mono">→ 127.0.0.1:4000</text>
+  <text x="586" y="618" class="m">vers le conteneur api</text>
+  <text x="586" y="636" class="m">(seule origine CORS : FRONT_URL)</text>
+
+  <!-- Docker compose -->
+  <rect x="900" y="352" width="836" height="534" rx="20" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="8 6"/>
+  <rect x="920" y="340" width="300" height="26" rx="6" fill="#ffffff"/>
+  <text x="928" y="359" class="tag">DOCKER COMPOSE · docker-compose.prod.yml</text>
+
+  <!-- web -->
+  <rect x="926" y="384" width="364" height="276" rx="18" fill="#161b26"/>
+  <text x="950" y="420" class="hw">web</text>
+  <text x="996" y="420" class="m mw">nginx 1.27-alpine · port 80</text>
+  <text x="950" y="458" class="t tw">• front compilé par Vite (dist/)</text>
+  <text x="950" y="484" class="t tw">• manifeste PWA et service worker</text>
+  <text x="950" y="510" class="t tw">• cache long des fichiers /assets/</text>
+  <text x="950" y="536" class="t tw">• en-têtes de sécurité</text>
+  <text x="950" y="562" class="t tw">• toute route → index.html (SPA)</text>
+  <text x="950" y="600" class="m mw">image bryamx26/frontend-training-app</text>
+  <text x="950" y="626" class="mono volt">/api/ → api:4000 (même origine)</text>
+
+  <!-- api -->
+  <rect x="1340" y="384" width="372" height="316" rx="18" fill="#161b26"/>
+  <text x="1364" y="420" class="hw">api</text>
+  <text x="1404" y="420" class="m mw">Node 22 + Express · port 4000</text>
+  <text x="1364" y="458" class="t tw">• helmet, CORS, limite de tentatives</text>
+  <text x="1364" y="484" class="t tw">• session JWT, rôles USER / COACH / ADMIN</text>
+  <text x="1364" y="510" class="t tw">• validation zod, mots de passe bcrypt</text>
+  <text x="1364" y="536" class="t tw">• Prisma ORM</text>
+  <text x="1364" y="562" class="t tw">• doc OpenAPI : /api/openapi.yaml</text>
+  <text x="1364" y="600" class="m mw">au démarrage : migrations, puis seed</text>
+  <text x="1364" y="622" class="m mw">image bryamx26/api-training-app</text>
+  <text x="1364" y="660" class="mono volt">utilisateur non root</text>
+
+  <!-- Volume SQLite (cylindre) -->
+  <path d="M1384 752 a142 22 0 0 0 284 0 v88 a142 22 0 0 1 -284 0 z" fill="#e6ebf1" stroke="#1b2230" stroke-width="1.5"/>
+  <ellipse cx="1526" cy="752" rx="142" ry="22" fill="#ffffff" stroke="#1b2230" stroke-width="1.5"/>
+  <text x="1526" y="800" class="t b" text-anchor="middle">Volume api_data</text>
+  <text x="1526" y="822" class="mono" text-anchor="middle">/data/sport.db</text>
+  <text x="1526" y="846" class="m" text-anchor="middle">SQLite, mode WAL</text>
+
+  <!-- ============ Flux ============ -->
+  <!-- Navigateur → proxy : front -->
+  <path d="M440 470 C 500 470, 500 488, 566 488" fill="none" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowG)"/>
+  <text x="452" y="452" class="flow green">HTTPS</text>
+  <!-- Navigateur → proxy : API -->
+  <path d="M440 600 C 500 600, 500 594, 566 594" fill="none" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#arrowB)"/>
+  <text x="452" y="628" class="flow blue">HTTPS</text>
+
+  <!-- proxy → web / api -->
+  <path d="M826 488 L 922 488" fill="none" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowG)"/>
+  <path d="M826 594 H 906 V 682 H 1314 V 650 H 1334" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrowB)"/>
+  <text x="1010" y="706" class="flowm">appels de l'API (fetch + cookie)</text>
+
+  <!-- web → api (même origine, optionnel) -->
+  <path d="M1290 620 L 1336 620" fill="none" stroke="#8a94a6" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrowM)"/>
+
+  <!-- api ↔ SQLite -->
+  <path d="M1526 700 L 1526 728" fill="none" stroke="#1b2230" stroke-width="2.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+
+  <!-- Google -->
+  <path d="M440 210 L 556 190" fill="none" stroke="#1b2230" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="446" y="182" class="flowm">bouton Google</text>
+  <path d="M1526 384 C 1526 250, 1000 182, 864 182" fill="none" stroke="#1b2230" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+  <text x="930" y="266" class="flowm">l'API vérifie le jeton d'identité Google</text>
+
+  <!-- ============ Développement ============ -->
+  <text x="40" y="964" class="label">DÉVELOPPEMENT ET DÉPLOIEMENT</text>
+  <rect x="40" y="984" width="250" height="96" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="62" y="1018" class="h">Développeur</text>
+  <text x="62" y="1044" class="m">docker compose (dev) :</text>
+  <text x="62" y="1064" class="m">Vite :5174, API :4000</text>
+
+  <rect x="350" y="984" width="300" height="96" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="372" y="1018" class="h">GitHub</text>
+  <text x="372" y="1044" class="mono">Bryamx26/training</text>
+  <text x="372" y="1064" class="m">branche main</text>
+
+  <rect x="710" y="984" width="420" height="96" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="732" y="1018" class="h">GitHub Actions (CI)</text>
+  <text x="732" y="1044" class="m">front : lint, tests Vitest, build</text>
+  <text x="732" y="1064" class="m">API : tests sur base SQLite temporaire</text>
+
+  <rect x="1190" y="984" width="570" height="96" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+  <text x="1212" y="1018" class="h">Mise en production, sur le serveur</text>
+  <text x="1212" y="1046" class="mono">docker compose -f docker-compose.prod.yml up -d --build</text>
+  <text x="1212" y="1068" class="m">reconstruit les images ; l'API applique les migrations au démarrage</text>
+
+  <path d="M290 1032 L 346 1032" fill="none" stroke="#1b2230" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="296" y="1022" class="flowm">push</text>
+  <path d="M650 1032 L 706 1032" fill="none" stroke="#1b2230" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M1130 1032 L 1186 1032" fill="none" stroke="#1b2230" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+  <path d="M1475 984 L 1475 914" fill="none" stroke="#1b2230" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+
+  <!-- Légende -->
+  <g transform="translate(40 730)">
+    <rect width="400" height="168" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+    <text x="22" y="34" class="label">LÉGENDE</text>
+    <path d="M22 62 L 72 62" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowG)"/>
+    <text x="86" y="67" class="m">pages, JavaScript, PWA (FRONT_URL)</text>
+    <path d="M22 92 L 72 92" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#arrowB)"/>
+    <text x="86" y="97" class="m">appels de l'API, avec le cookie (API_URL)</text>
+    <path d="M22 122 L 72 122" stroke="#8a94a6" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrowM)"/>
+    <text x="86" y="127" class="m">possible mais non utilisé :</text>
+    <text x="86" y="147" class="m">/api/ relayé par nginx (même origine)</text>
+  </g>
+</svg>

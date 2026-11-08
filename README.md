@@ -6,6 +6,12 @@ Application web de suivi sportif entre **coachs** et **sportifs** : le coach cr�
 - **API** : Node / Express, Prisma, SQLite.
 - **Deux designs** au choix dans le profil : *Relief* (néomorphique) et *Tracé* (éditorial), chacun en clair et sombre.
 
+## Infrastructure
+
+![Infrastructure de production de Sport Track : navigateur ou PWA, reverse proxy HTTPS, conteneurs web (nginx) et api (Node/Express), base SQLite, Google Identity et chaîne GitHub Actions](docs/infrastructure.png)
+
+En production, un reverse proxy HTTPS sur le serveur publie deux sous-domaines : `FRONT_URL` vers le conteneur **web** (nginx, front compilé et PWA) et `API_URL` vers le conteneur **api** (Node/Express, Prisma), qui stocke ses données dans une base SQLite sur le volume `api_data`. Source modifiable du schéma : [`docs/infrastructure.svg`](docs/infrastructure.svg).
+
 ## Démarrage rapide (Docker)
 
 ```bash
