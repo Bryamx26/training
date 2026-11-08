@@ -90,6 +90,19 @@ describe("retirer un sportif de ses abonnés", () => {
     assert.equal(encore.status, 404);
   });
 
+  it("fonctionne aussi pour un sportif dont le coach a créé le compte", async () => {
+    const coach = await createUser("COACH");
+    const cree = await api("POST", "/profils", { token: coach.token, body: nouveauSportif() });
+    assert.equal(cree.status, 201);
+
+    const res = await api("DELETE", `/me/subscribers/${cree.body.id}`, { token: coach.token });
+    assert.equal(res.status, 204);
+    assert.ok(await prisma.profil.findUnique({ where: { id: cree.body.id } }));
+
+    const liste = await api("GET", "/me/subscribers", { token: coach.token });
+    assert.ok(!liste.body.some((s) => s.id === cree.body.id));
+  });
+
   it("est réservé au staff", async () => {
     const athlete = await createUser("USER");
     const res = await api("DELETE", `/me/subscribers/1`, { token: athlete.token });
@@ -102,6 +115,28 @@ describe("création de compte par un utilisateur connecté", () => {
     const athlete = await createUser("USER");
     const res = await api("POST", "/profils", { token: athlete.token, body: nouveauSportif() });
     assert.equal(res.status, 403);
+  });
+
+  it("un admin choisit le rôle du compte créé, puis peut le changer", async () => {
+    const admin = await createUser("ADMIN");
+    const res = await api("POST", "/profils", { token: admin.token, body: { ...nouveauSportif(), role: "ADMIN" } });
+    assert.equal(res.status, 201);
+    assert.equal(res.body.role, "ADMIN");
+
+    const maj = await api("PUT", `/profils/${res.body.id}`, { token: admin.token, body: { role: "COACH" } });
+    assert.equal(maj.status, 200);
+    assert.equal(maj.body.role, "COACH");
+  });
+
+  it("un coach ne crée pas de compte admin et ne change pas de rôle", async () => {
+    const coach = await createUser("COACH");
+    const res = await api("POST", "/profils", { token: coach.token, body: { ...nouveauSportif(), role: "ADMIN" } });
+    assert.equal(res.status, 403);
+
+    const cree = await api("POST", "/profils", { token: coach.token, body: nouveauSportif() });
+    assert.equal(cree.status, 201);
+    const maj = await api("PUT", `/profils/${cree.body.id}`, { token: coach.token, body: { role: "COACH" } });
+    assert.equal(maj.status, 403);
   });
 });
 
