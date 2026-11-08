@@ -1,7 +1,29 @@
 // Adresse de l'API, fixée à la compilation (VITE_API_URL, ex.
 // "https://api-sport-track.mon-domaine.fr"). Vide : même origine que le front
 // (proxy Vite en dev, nginx sinon).
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+
+// Build locale (VITE_API_URL=http://localhost:4000) ouverte depuis un autre
+// appareil du réseau (http://192.168.x.x) : "localhost" désignerait cet
+// appareil. On garde le protocole et le port de l'API, mais on vise la machine
+// qui a servi le front.
+export function resolveApiOrigin(configured, pageHostname) {
+  const origin = (configured || "").replace(/\/+$/, "");
+  if (!origin || !pageHostname || LOCAL_HOSTS.includes(pageHostname)) return origin;
+  try {
+    const url = new URL(origin);
+    if (!LOCAL_HOSTS.includes(url.hostname)) return origin;
+    url.hostname = pageHostname;
+    return url.origin;
+  } catch {
+    return origin;
+  }
+}
+
+const API_ORIGIN = resolveApiOrigin(
+  import.meta.env.VITE_API_URL,
+  typeof window !== "undefined" ? window.location.hostname : "",
+);
 const BASE_URL = `${API_ORIGIN}/api`;
 
 // URL complète d'une route de l'API, pour les liens directs (téléchargements…).
