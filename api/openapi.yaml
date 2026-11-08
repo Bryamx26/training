@@ -149,18 +149,35 @@ paths:
     get:
       tags: [Séances]
       summary: Séances visibles par l'utilisateur
-      description: Un sportif voit ses séances, un coach les siennes, un admin toutes. Les filtres ne peuvent que restreindre ce périmètre.
+      description: |
+        Un sportif voit ses séances, un coach les siennes, un admin toutes. Les filtres ne peuvent que restreindre ce périmètre.
+        Tri : de la plus récente à la plus ancienne (date, puis id).
+        Sans `limit`, renvoie toutes les séances (tableau). Avec `limit`, renvoie une page
+        `{ items, total, nextCursor }` ; passer `nextCursor` en `cursor` pour la page suivante
+        (`nextCursor` vaut null sur la dernière page).
       parameters:
         - { name: profilId, in: query, schema: { type: integer } }
         - { name: auteurId, in: query, schema: { type: integer } }
-        - { name: from, in: query, description: "Date de début incluse (AAAA-MM-JJ)", schema: { type: string, format: date } }
-        - { name: to, in: query, description: "Date de fin incluse (AAAA-MM-JJ)", schema: { type: string, format: date } }
+        - { name: from, in: query, description: "Date de début incluse (AAAA-MM-JJ ou date ISO)", schema: { type: string } }
+        - { name: to, in: query, description: "Date de fin incluse, jour entier (AAAA-MM-JJ)", schema: { type: string, format: date } }
+        - { name: before, in: query, description: "Séances strictement avant cet instant (date ISO)", schema: { type: string } }
+        - { name: q, in: query, description: "Recherche dans le nom de la séance et de ses exercices", schema: { type: string, maxLength: 100 } }
+        - { name: limit, in: query, description: "Taille de page (1 à 100) ; active la pagination", schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: cursor, in: query, description: "`nextCursor` de la page précédente", schema: { type: integer } }
       responses:
         "200":
-          description: Séances
+          description: Séances (tableau sans `limit`, page avec `limit`)
           content:
             application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/Circuit" } }
+              schema:
+                oneOf:
+                  - { type: array, items: { $ref: "#/components/schemas/Circuit" } }
+                  - type: object
+                    properties:
+                      items: { type: array, items: { $ref: "#/components/schemas/Circuit" } }
+                      total: { type: integer, description: "Nombre de séances correspondant aux filtres" }
+                      nextCursor: { type: integer, nullable: true }
+        "400": { description: "Paramètre invalide (limit, cursor, date)" }
     post:
       tags: [Séances]
       summary: Créer une séance (coach)

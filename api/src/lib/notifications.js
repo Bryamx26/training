@@ -5,7 +5,8 @@ const prisma = require("./prisma");
 
 // Envoie la même notification à plusieurs profils, sauf à l'auteur de l'action.
 async function notify(profilIds, { type, message, lien = null }, { except } = {}) {
-  const ids = [...new Set(profilIds.map(Number))].filter((pid) => pid !== except);
+  // Un id absent (ex. auteur supprimé d'une séance) est ignoré.
+  const ids = [...new Set(profilIds.map(Number))].filter((pid) => Number.isInteger(pid) && pid > 0 && pid !== except);
   if (ids.length === 0) return;
   try {
     await prisma.notification.createMany({ data: ids.map((profilId) => ({ profilId, type, message, lien })) });

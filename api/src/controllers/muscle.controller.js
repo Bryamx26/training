@@ -1,4 +1,6 @@
 const prisma = require("../lib/prisma");
+const { validate } = require("../lib/validation");
+const schemas = require("../lib/schemas");
 
 async function list(req, res) {
   const muscles = await prisma.muscle.findMany({ orderBy: { nom: "asc" } });
@@ -6,9 +8,7 @@ async function list(req, res) {
 }
 
 async function create(req, res) {
-  const { nom } = req.body;
-  if (!nom) return res.status(400).json({ error: "nom est requis" });
-
+  const { nom } = validate(schemas.muscleCreate, req.body);
   const muscle = await prisma.muscle.create({ data: { nom } });
   res.status(201).json(muscle);
 }

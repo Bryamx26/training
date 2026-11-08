@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Check, UserMinus } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { profils as profilsApi, me as meApi } from "../lib/api";
 import TopAppBar from "../components/layout/TopAppBar";
@@ -11,7 +11,9 @@ import { Loading, EmptyState } from "../components/ui/States";
 
 const EMPTY_FORM = { nom: "", prenom: "", mail: "", motDePasse: "", poids: "", taille: "", age: "" };
 
-function UserForm({ initial, onCancel, onSaved }) {
+// `limited` : sportif inscrit lui-même, le coach ne modifie que son suivi
+// physique (l'API refuse le reste).
+function UserForm({ initial, limited = false, onCancel, onSaved }) {
   const [form, setForm] = useState(initial ?? EMPTY_FORM);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -23,14 +25,12 @@ function UserForm({ initial, onCancel, onSaved }) {
     setSaving(true);
     try {
       const payload = {
-        nom: form.nom,
-        prenom: form.prenom,
-        mail: form.mail,
         poids: form.poids ? Number(form.poids) : null,
         taille: form.taille ? Number(form.taille) : null,
         age: form.age ? Number(form.age) : null,
       };
-      if (form.motDePasse) payload.motDePasse = form.motDePasse;
+      if (!limited) Object.assign(payload, { nom: form.nom, prenom: form.prenom, mail: form.mail });
+      if (!limited && form.motDePasse) payload.motDePasse = form.motDePasse;
 
       const saved = editing ? await profilsApi.update(initial.id, payload) : await profilsApi.create(payload);
       onSaved(saved);
@@ -44,23 +44,32 @@ function UserForm({ initial, onCancel, onSaved }) {
   return (
     <form onSubmit={handleSubmit} className="card-surface p-5 flex flex-col gap-3 animate-rise">
       <div className="flex items-center justify-between">
-        <h3 className="text-h3">{editing ? "Modifier" : "Nouveau sportif"}</h3>
+        <h3 className="text-h3">{editing ? (limited ? `Suivi de ${initial.prenom}` : "Modifier") : "Nouveau sportif"}</h3>
         <button type="button" onClick={onCancel} aria-label="Fermer" className="press">
           <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Prénom" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} required />
-        <Input placeholder="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
-      </div>
-      <Input placeholder="E-mail" type="email" value={form.mail} onChange={(e) => setForm({ ...form, mail: e.target.value })} required />
-      <Input
-        placeholder={editing ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}
-        type="password"
-        value={form.motDePasse}
-        onChange={(e) => setForm({ ...form, motDePasse: e.target.value })}
-        required={!editing}
-      />
+      {limited && (
+        <p className="text-caption text-muted-foreground">
+          {initial.prenom} a créé son compte lui-même : tu peux modifier son suivi physique, pas son identité ni son mot de passe.
+        </p>
+      )}
+      {!limited && (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Input placeholder="Prénom" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} required />
+            <Input placeholder="Nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} required />
+          </div>
+          <Input placeholder="E-mail" type="email" value={form.mail} onChange={(e) => setForm({ ...form, mail: e.target.value })} required />
+          <Input
+            placeholder={editing ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}
+            type="password"
+            value={form.motDePasse ?? ""}
+            onChange={(e) => setForm({ ...form, motDePasse: e.target.value })}
+            required={!editing}
+          />
+        </>
+      )}
       <div className="grid grid-cols-3 gap-2">
         <Input placeholder="Âge" inputMode="numeric" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
         <Input placeholder="Poids" inputMode="numeric" value={form.poids} onChange={(e) => setForm({ ...form, poids: e.target.value })} />
@@ -134,18 +143,32 @@ function AdminUsers() {
   const { user } = useAuth();
   const [users, setUsers] = useState(null);
   const [formTarget, setFormTarget] = useState(null); // null = closed, {} = create, {id,...} = edit
+  const [error, setError] = useState(null);
 
   function reload() {
     // Un coach ne gère que ses abonnés actifs ; un sportif créé ici lui est abonné d'office.
-    meApi.subscribers().then(setUsers);
+    meApi.subscribers().then(setUsers, (e) => setError(e.message));
   }
 
   useEffect(reload, []);
 
-  async function handleDelete(id) {
-    if (!window.confirm("Supprimer cet utilisateur et toutes ses séances ?")) return;
-    await profilsApi.remove(id);
-    reload();
+  // Droits complets (identité, mot de passe, suppression) : admin, ou coach
+  // qui a créé ce compte. Sinon, suivi physique et « retirer de mes sportifs ».
+  const fullAccess = (u) => user.role === "ADMIN" || u.creeParId === user.id;
+
+  async function handleDelete(u) {
+    const confirmation = fullAccess(u)
+      ? `Supprimer définitivement le compte de ${u.prenom} ${u.nom} et toutes ses données ?`
+      : `Retirer ${u.prenom} ${u.nom} de tes sportifs ? Son compte et ses séances passées sont conservés.`;
+    if (!window.confirm(confirmation)) return;
+    setError(null);
+    try {
+      if (fullAccess(u)) await profilsApi.remove(u.id);
+      else await meApi.removeSubscriber(u.id);
+      reload();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   function handleSaved() {
@@ -171,7 +194,16 @@ function AdminUsers() {
 
       <div className="px-5 flex flex-col gap-3 pb-8">
         {user.role === "ADMIN" && <DemandesCoach />}
-        {formTarget && <UserForm initial={formTarget.id ? formTarget : null} onCancel={() => setFormTarget(null)} onSaved={handleSaved} />}
+        {formTarget && (
+          <UserForm
+            key={formTarget.id ?? "new"}
+            initial={formTarget.id ? formTarget : null}
+            limited={Boolean(formTarget.id) && !fullAccess(formTarget)}
+            onCancel={() => setFormTarget(null)}
+            onSaved={handleSaved}
+          />
+        )}
+        {error && <p className="text-caption text-destructive" role="alert">{error}</p>}
 
         {!users && <Loading />}
         {users && users.length === 0 && !formTarget && <EmptyState title="Aucun abonné" subtitle="Les sportifs s'abonnent à toi depuis Social, ou ajoute-en un ici." />}
@@ -194,9 +226,15 @@ function AdminUsers() {
             <button onClick={() => setFormTarget(u)} className="press p-2" aria-label="Modifier">
               <Pencil className="w-4 h-4" />
             </button>
-            <button onClick={() => handleDelete(u.id)} className="press p-2" aria-label="Supprimer">
-              <Trash2 className="w-4 h-4 text-destructive" />
-            </button>
+            {fullAccess(u) ? (
+              <button onClick={() => handleDelete(u)} className="press p-2" aria-label={`Supprimer le compte de ${u.prenom} ${u.nom}`}>
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </button>
+            ) : (
+              <button onClick={() => handleDelete(u)} className="press p-2" aria-label={`Retirer ${u.prenom} ${u.nom} de mes sportifs`}>
+                <UserMinus className="w-4 h-4 text-destructive" />
+              </button>
+            )}
           </div>
         ))}
       </div>

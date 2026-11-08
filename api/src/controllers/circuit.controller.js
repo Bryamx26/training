@@ -5,7 +5,7 @@ const { assertSubscribedAthletes } = require("../lib/subscriptions");
 const { findManageableCircuit } = require("../lib/circuitAccess");
 const { parseExercice, parseMuscleIds } = require("../lib/exerciceData");
 const { notify, formatDate } = require("../lib/notifications");
-const { validate } = require("../lib/validation");
+const { validate, parseId, parseDay } = require("../lib/validation");
 const schemas = require("../lib/schemas");
 
 const INCLUDE = {
@@ -20,6 +20,8 @@ const INCLUDE_DETAIL = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Taille maximale d'une page de GET /api/circuits?limit=.
+const PAGE_MAX = 100;
 
 // Un sportif ne voit que SA réalisation d'une séance ; l'auteur et l'admin voient tout.
 function serializeDetail(circuit, user) {
@@ -36,21 +38,52 @@ async function list(req, res) {
   const auteurId = isAdmin(req.user) || !isStaff(req.user) ? req.query.auteurId : req.user.id;
 
   const where = {};
-  if (profilId) where.personnes = { some: { profilId: Number(profilId) } };
-  if (auteurId) where.auteurId = Number(auteurId);
-  // ?from=AAAA-MM-JJ&to=AAAA-MM-JJ : séances de la période (vue calendrier).
-  if (req.query.from || req.query.to) {
+  if (profilId) where.personnes = { some: { profilId: parseId(profilId, "profilId") } };
+  if (auteurId) where.auteurId = parseId(auteurId, "auteurId");
+  // ?from=AAAA-MM-JJ&to=AAAA-MM-JJ : séances de la période (vue calendrier ;
+  // `to` inclut tout ce jour-là). ?before=<date> : séances strictement avant
+  // cet instant (onglet « Terminées »).
+  const from = parseDay(req.query.from, null);
+  const to = parseDay(req.query.to, null);
+  const before = parseDay(req.query.before, null);
+  if (from || to || before) {
     where.date = {};
-    if (req.query.from) where.date.gte = new Date(req.query.from);
-    if (req.query.to) where.date.lt = new Date(new Date(req.query.to).getTime() + DAY_MS);
+    if (from) where.date.gte = from;
+    const ends = [to && new Date(to.getTime() + DAY_MS), before].filter(Boolean);
+    if (ends.length) where.date.lt = new Date(Math.min(...ends.map((d) => d.getTime())));
+  }
+  // ?q= : nom de la séance ou d'un de ses exercices.
+  const q = String(req.query.q ?? "").trim().slice(0, 100);
+  if (q) where.OR = [{ nom: { contains: q } }, { exercices: { some: { exercice: { contains: q } } } }];
+
+  // Ordre stable (date puis id) : la pagination ne saute ni ne répète aucune séance.
+  const orderBy = [{ date: "desc" }, { id: "desc" }];
+
+  // Sans ?limit : toutes les séances (statistiques, calculs sur l'historique).
+  if (req.query.limit === undefined) {
+    return res.json(await prisma.circuit.findMany({ where, include: INCLUDE, orderBy }));
   }
 
-  const circuits = await prisma.circuit.findMany({ where, include: INCLUDE, orderBy: { date: "desc" } });
-  res.json(circuits);
+  // ?limit=N[&cursor=<id>] : une page de N séances, à partir de celle qui suit
+  // `cursor` (le `nextCursor` de la page précédente).
+  const limit = Math.min(parseId(req.query.limit, "limit"), PAGE_MAX);
+  const cursor = req.query.cursor ? parseId(req.query.cursor, "cursor") : null;
+  const [rows, total] = await Promise.all([
+    prisma.circuit.findMany({
+      where,
+      include: INCLUDE,
+      orderBy,
+      take: limit + 1, // une de plus : dit s'il reste une page après celle-ci
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+    }),
+    prisma.circuit.count({ where }),
+  ]);
+  const items = rows.slice(0, limit);
+  res.json({ items, total, nextCursor: rows.length > limit ? items[items.length - 1].id : null });
 }
 
 async function getById(req, res) {
-  const circuit = await prisma.circuit.findUnique({ where: { id: Number(req.params.id) }, include: INCLUDE_DETAIL });
+  const circuit = await prisma.circuit.findUnique({ where: { id: parseId(req.params.id) }, include: INCLUDE_DETAIL });
   if (!circuit) throw new HttpError(404, "Séance introuvable", "CIRCUIT_NOT_FOUND");
   if (!canViewCircuit(req.user, circuit)) throw new HttpError(403, "Accès refusé", "FORBIDDEN");
   res.json(serializeDetail(circuit, req.user));
@@ -159,7 +192,7 @@ async function addParticipant(req, res) {
 async function removeParticipant(req, res) {
   const circuit = await findManageableCircuit(req.user, req.params.id);
   await prisma.circuitParticipant.delete({
-    where: { circuitId_profilId: { circuitId: circuit.id, profilId: Number(req.params.profilId) } },
+    where: { circuitId_profilId: { circuitId: circuit.id, profilId: parseId(req.params.profilId, "profilId") } },
   });
   res.status(204).send();
 }
@@ -170,7 +203,7 @@ async function removeParticipant(req, res) {
 async function saveRealisation(req, res) {
   const { series, ...data } = validate(schemas.realisation, req.body);
   const circuit = await prisma.circuit.findUnique({
-    where: { id: Number(req.params.id) },
+    where: { id: parseId(req.params.id) },
     select: { id: true, nom: true, auteurId: true, personnes: { select: { profilId: true } }, exercices: { select: { id: true } } },
   });
   if (!circuit) throw new HttpError(404, "Séance introuvable", "CIRCUIT_NOT_FOUND");
@@ -193,7 +226,8 @@ async function saveRealisation(req, res) {
     }),
   ]);
 
-  if (!existing) {
+  // Séance dont le coach a été supprimé (auteurId null) : personne à prévenir.
+  if (!existing && circuit.auteurId) {
     const athlete = await prisma.profil.findUnique({ where: { id: req.user.id }, select: { prenom: true, nom: true } });
     await notify(
       [circuit.auteurId],

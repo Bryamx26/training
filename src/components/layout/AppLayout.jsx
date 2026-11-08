@@ -5,6 +5,7 @@ import BottomNav from "./BottomNav";
 import { Loading } from "../ui/States";
 import { NotificationsProvider } from "../../context/NotificationsContext";
 import { flushQueue } from "../../lib/offlineQueue";
+import { useAuth } from "../../context/AuthContext";
 
 // Bandeau affiché quand le navigateur est hors ligne.
 function useOnline() {
@@ -23,11 +24,14 @@ function useOnline() {
 
 function AppLayout() {
   const online = useOnline();
+  const { user } = useAuth();
+  const profilId = user?.id;
 
-  // Séances terminées hors ligne : envoyées au démarrage et au retour du réseau.
+  // Séances terminées hors ligne : envoyées au démarrage, au retour du réseau
+  // et à la reconnexion, uniquement celles du compte connecté.
   useEffect(() => {
-    if (online) flushQueue();
-  }, [online]);
+    if (online && profilId) flushQueue(profilId);
+  }, [online, profilId]);
 
   return (
     <NotificationsProvider>

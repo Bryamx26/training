@@ -1,4 +1,5 @@
 const { rateLimit } = require("express-rate-limit");
+const { isStaff } = require("../lib/permissions");
 
 // Limites par adresse IP sur les routes publiques sensibles, contre le test de
 // mots de passe en masse et la création de comptes à la chaîne. Réglable par
@@ -18,8 +19,9 @@ function limiter({ skipSuccessfulRequests, skip }) {
 
 // Connexion : seuls les échecs consomment un essai.
 const loginLimiter = limiter({ skipSuccessfulRequests: true });
-// Inscription publique : chaque compte créé compte. Un coach connecté qui crée
-// les comptes de ses sportifs n'est pas limité (à placer après optionalAuth).
-const signupLimiter = limiter({ skipSuccessfulRequests: false, skip: (req) => Boolean(req.user) });
+// Inscription publique : chaque compte créé compte. Seul un coach (ou admin)
+// connecté qui crée les comptes de ses sportifs n'est pas limité (à placer
+// après optionalAuth).
+const signupLimiter = limiter({ skipSuccessfulRequests: false, skip: (req) => Boolean(req.user && isStaff(req.user)) });
 
 module.exports = { loginLimiter, signupLimiter };

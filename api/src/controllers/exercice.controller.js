@@ -5,7 +5,7 @@ const { findManageableCircuit } = require("../lib/circuitAccess");
 const { BASE_CATALOGUE, defaultMuscles } = require("../lib/exerciceCatalogue");
 const { parseExercice, parseExercicePatch, parseMuscleIds } = require("../lib/exerciceData");
 const { notifyOnce } = require("../lib/notifications");
-const { validate } = require("../lib/validation");
+const { validate, parseId } = require("../lib/validation");
 const schemas = require("../lib/schemas");
 
 const INCLUDE = { muscles: { include: { muscle: true } }, notes: true };
@@ -13,7 +13,7 @@ const INCLUDE = { muscles: { include: { muscle: true } }, notes: true };
 // Charge un exercice et vérifie que l'utilisateur connecté gère sa séance,
 // renvoyée ({ id, auteurId, personnes }).
 async function findManageableExercice(user, exerciceId) {
-  const exercice = await prisma.exercice.findUnique({ where: { id: Number(exerciceId) }, select: { circuitId: true } });
+  const exercice = await prisma.exercice.findUnique({ where: { id: parseId(exerciceId) }, select: { circuitId: true } });
   if (!exercice) throw new HttpError(404, "Exercice introuvable", "EXERCICE_NOT_FOUND");
   return findManageableCircuit(user, exercice.circuitId);
 }
@@ -27,7 +27,7 @@ async function list(req, res) {
   if (req.query.circuitId) await findManageableCircuit(req.user, req.query.circuitId);
   else if (!isAdmin(req.user)) throw new HttpError(400, "circuitId est requis", "CIRCUIT_REQUIRED");
 
-  const where = req.query.circuitId ? { circuitId: Number(req.query.circuitId) } : undefined;
+  const where = req.query.circuitId ? { circuitId: parseId(req.query.circuitId, "circuitId") } : undefined;
   const exercices = await prisma.exercice.findMany({
     where,
     include: INCLUDE,
@@ -39,7 +39,7 @@ async function list(req, res) {
 async function getById(req, res) {
   await findManageableExercice(req.user, req.params.id);
   const exercice = await prisma.exercice.findUnique({
-    where: { id: Number(req.params.id) },
+    where: { id: parseId(req.params.id) },
     include: INCLUDE,
   });
   if (!exercice) return res.status(404).json({ error: "Exercice introuvable" });
@@ -77,7 +77,7 @@ async function update(req, res) {
   }
 
   const updated = await prisma.exercice.update({
-    where: { id: Number(req.params.id) },
+    where: { id: parseId(req.params.id) },
     data,
     include: INCLUDE,
   });
@@ -86,15 +86,15 @@ async function update(req, res) {
 
 async function remove(req, res) {
   await findManageableExercice(req.user, req.params.id);
-  await prisma.exercice.delete({ where: { id: Number(req.params.id) } });
+  await prisma.exercice.delete({ where: { id: parseId(req.params.id) } });
   res.status(204).send();
 }
 
 // Note d'un exercice pour un participant précis : chaque sportif d'une séance
 // de groupe est noté indépendamment des autres.
 async function grade(req, res) {
-  const exerciceId = Number(req.params.id);
-  const profilId = Number(req.params.profilId);
+  const exerciceId = parseId(req.params.id);
+  const profilId = parseId(req.params.profilId, "profilId");
   const { note, commentaire } = validate(schemas.grade, req.body);
   const circuit = await findManageableExercice(req.user, exerciceId);
   if (!circuit.personnes.some((p) => p.profilId === profilId)) {

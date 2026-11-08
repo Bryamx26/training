@@ -3,7 +3,7 @@
 // Exécuter depuis /api : npm run db:seed
 
 const path = require("path");
-const bcrypt = require(path.join(__dirname, "../api/node_modules/bcryptjs"));
+const bcrypt = require(path.join(__dirname, "../api/node_modules/bcrypt"));
 const { PrismaClient } = require(path.join(__dirname, "../api/node_modules/@prisma/client"));
 
 const prisma = new PrismaClient();

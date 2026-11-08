@@ -240,3 +240,80 @@ describe("réalisation d'une séance", () => {
     assert.equal((await api("GET", `/stats/muscles?profilId=${athlete.id}`, { token: other.token })).status, 403);
   });
 });
+
+describe("pagination de la liste des séances", () => {
+  // 7 séances d'un coach, une par jour, la plus récente aujourd'hui + 3 jours.
+  async function coachWithCircuits() {
+    const coach = await createUser("COACH");
+    const DAY = 24 * 60 * 60 * 1000;
+    for (let i = 0; i < 7; i++) {
+      await prisma.circuit.create({
+        data: {
+          nom: i === 2 ? "Cardio du mardi" : `Séance ${i}`,
+          type: "FORCE",
+          date: new Date(Date.now() + (3 - i) * DAY),
+          auteurId: coach.id,
+          exercices: { create: [{ exercice: i === 4 ? "Burpees" : "Squat", ordre: 0 }] },
+        },
+      });
+    }
+    return coach;
+  }
+
+  it("sans limit, renvoie toujours la liste complète (tableau)", async () => {
+    const coach = await coachWithCircuits();
+    const res = await api("GET", "/circuits", { token: coach.token });
+    assert.equal(res.status, 200);
+    assert.ok(Array.isArray(res.body));
+    assert.equal(res.body.length, 7);
+  });
+
+  it("parcourt toutes les séances page par page, sans doublon, de la plus récente à la plus ancienne", async () => {
+    const coach = await coachWithCircuits();
+    const seen = [];
+    let cursor = null;
+    let pages = 0;
+    do {
+      const res = await api("GET", `/circuits?limit=3${cursor ? `&cursor=${cursor}` : ""}`, { token: coach.token });
+      assert.equal(res.status, 200);
+      assert.equal(res.body.total, 7);
+      assert.ok(res.body.items.length <= 3);
+      seen.push(...res.body.items);
+      cursor = res.body.nextCursor;
+      pages++;
+    } while (cursor && pages < 10);
+    assert.equal(pages, 3);
+    assert.equal(new Set(seen.map((c) => c.id)).size, 7);
+    const dates = seen.map((c) => new Date(c.date).getTime());
+    assert.deepEqual(dates, [...dates].sort((a, b) => b - a));
+  });
+
+  it("filtre côté serveur : recherche, à venir, terminées", async () => {
+    const coach = await coachWithCircuits();
+    const now = new Date().toISOString();
+    const parNom = await api("GET", "/circuits?limit=10&q=cardio", { token: coach.token });
+    assert.deepEqual(parNom.body.items.map((c) => c.nom), ["Cardio du mardi"]);
+    const parExercice = await api("GET", "/circuits?limit=10&q=burpees", { token: coach.token });
+    assert.equal(parExercice.body.total, 1);
+    const aVenir = await api("GET", `/circuits?limit=10&from=${now}`, { token: coach.token });
+    const terminees = await api("GET", `/circuits?limit=10&before=${now}`, { token: coach.token });
+    assert.equal(aVenir.body.total + terminees.body.total, 7);
+    assert.ok(aVenir.body.items.every((c) => new Date(c.date) >= new Date(now)));
+    assert.ok(terminees.body.items.every((c) => new Date(c.date) < new Date(now)));
+  });
+
+  it("refuse une limite ou un curseur invalide", async () => {
+    const coach = await createUser("COACH");
+    for (const qs of ["limit=0", "limit=abc", "limit=5&cursor=x", "limit=5&before=pas-une-date"]) {
+      const res = await api("GET", `/circuits?${qs}`, { token: coach.token });
+      assert.equal(res.status, 400, qs);
+    }
+  });
+
+  it("plafonne la taille d'une page", async () => {
+    const coach = await coachWithCircuits();
+    const res = await api("GET", "/circuits?limit=100000", { token: coach.token });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.items.length, 7);
+  });
+});

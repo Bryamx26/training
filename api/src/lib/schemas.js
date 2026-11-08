@@ -79,6 +79,8 @@ const realisation = z.object({
     .max(500),
 });
 
+const muscleCreate = z.object({ nom: requiredText(60) });
+
 const notificationsRead = z.object({ ids: z.array(id).optional() });
 
 module.exports = {
@@ -92,4 +94,5 @@ module.exports = {
   grade,
   realisation,
   notificationsRead,
+  muscleCreate,
 };

@@ -51,6 +51,13 @@ model Profil {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Coach (ou admin) qui a créé ce compte depuis la page Utilisateurs. Lui
+  // seul peut en changer l'adresse, le mot de passe ou le supprimer. Null :
+  // inscription par la personne elle-même (ou créateur supprimé).
+  creeParId    Int?
+  creePar      Profil?  @relation("ProfilCreateur", fields: [creeParId], references: [id], onDelete: SetNull)
+  comptesCrees Profil[] @relation("ProfilCreateur")
+
   circuits       Circuit[]            @relation("CircuitAuteur")
   participations CircuitParticipant[]
   exerciceNotes  ExerciceNote[]
@@ -75,8 +82,10 @@ model Circuit {
   date      DateTime
   createdAt DateTime    @default(now())
 
-  auteurId Int
-  auteur   Profil @relation("CircuitAuteur", fields: [auteurId], references: [id], onDelete: Cascade)
+  // Null : le coach auteur a été supprimé. La séance reste visible par ses
+  // participants (historique conservé) ; seul un admin peut encore la gérer.
+  auteurId Int?
+  auteur   Profil? @relation("CircuitAuteur", fields: [auteurId], references: [id], onDelete: SetNull)
 
   personnes    CircuitParticipant[]
   exercices    Exercice[]

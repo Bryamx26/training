@@ -4,13 +4,14 @@ const { PUBLIC_FIELDS, COACH_FIELDS } = require("../lib/profilFields");
 const { isStaff, isAthlete } = require("../lib/permissions");
 const { activateSubscription } = require("../lib/subscriptions");
 const { notify } = require("../lib/notifications");
+const { parseId } = require("../lib/validation");
 
 const COACH_ROLES = ["COACH", "ADMIN"];
 const SEARCH_LIMIT = 20;
 
 // Charge le coach ciblé par l'URL : 404 s'il n'existe pas, 400 si ce n'est pas un coach.
 async function findCoach(coachId) {
-  const coach = await prisma.profil.findUnique({ where: { id: Number(coachId) }, select: COACH_FIELDS });
+  const coach = await prisma.profil.findUnique({ where: { id: parseId(coachId, "coachId") }, select: COACH_FIELDS });
   if (!coach) throw new HttpError(404, "Coach introuvable", "COACH_NOT_FOUND");
   if (!isStaff(coach)) throw new HttpError(400, "Cet utilisateur n'est pas un coach", "NOT_A_COACH");
   return coach;
@@ -112,4 +113,16 @@ async function mySubscribers(req, res) {
   res.json(subscriptions.map((s) => ({ ...s.athlete, subscribedAt: s.updatedAt })));
 }
 
-module.exports = { searchCoaches, getCoach, subscribe, updateSubscription, myCoaches, mySubscribers };
+// DELETE /api/me/subscribers/:athleteId — le coach connecté retire un sportif
+// de ses abonnés (statut CANCELLED, comme un désabonnement du sportif). Le
+// compte du sportif et ses participations passées sont conservés.
+async function removeSubscriber(req, res) {
+  const where = { coachId_athleteId: { coachId: req.user.id, athleteId: parseId(req.params.athleteId, "athleteId") } };
+  const existing = await prisma.coachSubscription.findUnique({ where });
+  if (existing?.status !== "ACTIVE") throw new HttpError(404, "Ce sportif n'est pas abonné à toi", "SUBSCRIPTION_NOT_FOUND");
+
+  await prisma.coachSubscription.update({ where, data: { status: "CANCELLED" } });
+  res.status(204).send();
+}
+
+module.exports = { searchCoaches, getCoach, subscribe, updateSubscription, myCoaches, mySubscribers, removeSubscriber };

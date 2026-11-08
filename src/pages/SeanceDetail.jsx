@@ -52,8 +52,12 @@ function SeanceDetail() {
 
   async function handleDelete() {
     if (!window.confirm("Supprimer définitivement cette séance ?")) return;
-    await circuitsApi.remove(id);
-    navigate("/seances", { replace: true });
+    try {
+      await circuitsApi.remove(id);
+      navigate("/seances", { replace: true });
+    } catch (err) {
+      window.alert(`Suppression impossible : ${err.message}`);
+    }
   }
 
   if (error) return <ErrorState message={error} />;

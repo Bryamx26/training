@@ -30,6 +30,12 @@ function storeProfil(profil) {
   }
 }
 
+// Données de l'API gardées pour le mode hors ligne : propres au compte, à
+// oublier dès que la session se termine (déconnexion ou expiration).
+function clearApiCache() {
+  return window.caches?.delete(API_CACHE).catch(() => {});
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStoredProfil);
 
@@ -40,13 +46,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Session refusée par l'API : on oublie le profil, ProtectedRoute renvoie vers /login.
-  const forget = useCallback(() => setProfil(null), [setProfil]);
+  const forget = useCallback(() => {
+    setProfil(null);
+    clearApiCache();
+  }, [setProfil]);
 
   const logout = useCallback(async () => {
     forget();
     await authApi.logout().catch(() => {});
-    // Données de l'API gardées pour le mode hors ligne : propres à ce compte.
-    await window.caches?.delete(API_CACHE).catch(() => {});
+    await clearApiCache();
   }, [forget]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const prisma = require("../lib/prisma");
 const HttpError = require("../lib/httpError");
@@ -57,7 +57,8 @@ async function google(req, res) {
   if (email_verified !== true) throw new HttpError(401, "Adresse Google non vérifiée", "GOOGLE_EMAIL_UNVERIFIED");
 
   const mail = email.toLowerCase();
-  let profil = await prisma.profil.findUnique({ where: { mail } });
+  // Comme pour login : un compte ancien peut avoir l'adresse avec sa casse d'origine.
+  let profil = await prisma.profil.findFirst({ where: { mail: { in: [email, mail] } } });
   if (!profil) {
     const randomHash = await bcrypt.hash(crypto.randomUUID(), 10);
     profil = await prisma.profil.create({

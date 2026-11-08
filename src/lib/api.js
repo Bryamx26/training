@@ -104,6 +104,10 @@ export const coaches = {
 export const me = {
   coaches: () => get("/me/coaches"),
   subscribers: () => get("/me/subscribers"),
+  // Le coach retire un sportif de ses abonnés (le compte est conservé).
+  removeSubscriber: (athleteId) => del(`/me/subscribers/${athleteId}`),
+  // Acceptation des CGU (compte créé par un coach, première connexion).
+  acceptCgu: () => post("/me/cgu"),
   notifications: () => get("/me/notifications"),
   // Sans `ids`, marque toutes les notifications comme lues.
   markNotificationsRead: (ids) => post("/me/notifications/read", ids ? { ids } : {}),

@@ -26,9 +26,25 @@ const int = (min, max) => number(min, max).int("doit être un entier");
 const ROLES = ["USER", "COACH", "ADMIN"];
 const TYPES = ["FORCE", "ENDURANCE", "HYPERTROPHIE", "FIGURE"];
 
+// Identifiant venant de l'URL (params / query) : entier positif, sinon 400
+// (au lieu d'un NaN qui ferait échouer Prisma en 500).
+function parseId(value, label = "id") {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) throw new HttpError(400, `${label} invalide`, "VALIDATION_ERROR");
+  return n;
+}
+
+// Date venant de la query (?from=, ?to=) : `fallback` si absente, 400 si invalide.
+function parseDay(value, fallback) {
+  if (!value) return fallback;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) throw new HttpError(400, "Date invalide", "VALIDATION_ERROR");
+  return d;
+}
+
 const date = z
   .string({ error: "doit être une date" })
   .refine((v) => !Number.isNaN(new Date(v).getTime()), "date invalide")
   .transform((v) => new Date(v));
 
-module.exports = { z, validate, nullable, id, text, requiredText, number, int, date, ROLES, TYPES };
+module.exports = { z, validate, parseId, parseDay, nullable, id, text, requiredText, number, int, date, ROLES, TYPES };

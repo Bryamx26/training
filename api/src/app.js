@@ -57,6 +57,12 @@ app.use((err, req, res, _next) => {
   if (err.code === "P2025") return res.status(404).json({ error: "Ressource introuvable", code: "NOT_FOUND" });
   if (err.code === "P2002") return res.status(409).json({ error: "Valeur déjà utilisée (contrainte unique)", code: "CONFLICT" });
   if (err.code === "P2003") return res.status(409).json({ error: "Opération refusée : contrainte de clé étrangère", code: "FOREIGN_KEY" });
+  // Dernier filet : une valeur mal formée qui aurait échappé à la validation.
+  // Le message de Prisma (détail du schéma) n'est jamais renvoyé au client.
+  if (err.name === "PrismaClientValidationError") {
+    console.error(err);
+    return res.status(400).json({ error: "Requête invalide", code: "VALIDATION_ERROR" });
+  }
 
   console.error(err);
   // En production, le détail d'une erreur inattendue n'est pas renvoyé au client.

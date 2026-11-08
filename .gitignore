@@ -31,3 +31,9 @@ dist-ssr
 # Base de données locale
 database/*.db
 database/*.db-journal
+database/*.db-wal
+database/*.db-shm
+
+# Sorties générées (vidéo de présentation, graphe de code)
+brag-output/
+graphify-out/

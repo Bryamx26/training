@@ -9,6 +9,7 @@ import { initialSeriesLeft, nextState, phaseDuration, plannedSet, roundsOf, tota
 import { saveRealisation } from "../lib/offlineQueue";
 import { beep, unlockAudio, vibrate } from "../lib/feedback";
 import useWakeLock from "../hooks/useWakeLock";
+import { useAuth } from "../context/AuthContext";
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -30,7 +31,8 @@ function isCounted(exercice) {
   return Boolean(exercice.nbRep || exercice.lest);
 }
 
-const numberOrNull = (v) => (v === "" || v === null || v === undefined ? null : Number(String(v).replace(",", ".")));
+// Valeur saisie → nombre, null si vide, NaN si ce n'est pas un nombre.
+const numberOrNull = (v) => (v === "" || v === null || v === undefined ? null : Number(String(v).trim().replace(",", ".")));
 
 // Champs « reps » et « kg » d'une série réalisée. `showLabels=false` : libellés
 // réservés aux lecteurs d'écran (lignes suivantes d'un tableau de séries).
@@ -63,6 +65,7 @@ function SetInputs({ set, onChange, compact = false, showLabels = true }) {
 
 // Écran de fin : récapitulatif modifiable des séries et enregistrement.
 function FinSeance({ circuit, log, setLog, onQuit }) {
+  const { user } = useAuth();
   const [status, setStatus] = useState(null); // null | "saving" | "saved" | "queued"
   const [error, setError] = useState(null);
 
@@ -71,11 +74,17 @@ function FinSeance({ circuit, log, setLog, onQuit }) {
   }
 
   async function handleSave() {
-    setStatus("saving");
     setError(null);
+    const series = log.map((s) => ({ ...s, reps: numberOrNull(s.reps), lest: numberOrNull(s.lest) }));
+    const invalide = series.find((s) => Number.isNaN(s.reps) || Number.isNaN(s.lest) || (s.reps !== null && !Number.isInteger(s.reps)));
+    if (invalide) {
+      const ex = circuit.exercices.find((e) => e.id === invalide.exerciceId);
+      setError(`${ex?.exercice ?? "Exercice"}, série ${invalide.serie} : les reps doivent être un nombre entier et la charge un nombre.`);
+      return;
+    }
+    setStatus("saving");
     try {
-      const series = log.map((s) => ({ ...s, reps: numberOrNull(s.reps), lest: numberOrNull(s.lest) }));
-      setStatus(await saveRealisation(circuit.id, { series }));
+      setStatus(await saveRealisation(user.id, circuit.id, { series }));
     } catch (err) {
       setError(err.message);
       setStatus(null);
@@ -94,7 +103,7 @@ function FinSeance({ circuit, log, setLog, onQuit }) {
         <p className="text-caption text-muted-foreground max-w-xs">
           {status === "saved"
             ? "Ton coach peut voir ce que tu as réalisé."
-            : "Pas de connexion : ta séance sera envoyée automatiquement dès que le réseau reviendra."}
+            : "Envoi impossible pour l'instant : ta séance sera envoyée automatiquement dès que possible."}
         </p>
         <Button onClick={onQuit}>Retour à la séance</Button>
       </div>

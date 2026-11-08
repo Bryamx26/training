@@ -4,7 +4,7 @@ import { Plus, ChevronUp, List, CalendarDays } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useDesign } from "../context/DesignContext";
 import { circuits as circuitsApi } from "../lib/api";
-import { isUpcoming } from "../lib/seance";
+import useDebouncedValue from "../hooks/useDebouncedValue";
 import TopAppBar from "../components/layout/TopAppBar";
 import Button from "../components/ui/Button";
 import SeanceCard from "../components/seances/SeanceCard";
@@ -27,35 +27,68 @@ const AFFICHAGES = [
 
 // Nombre de séances affichées avant « Voir tout », pour garder l'écran lisible.
 const APERCU = 3;
+// Séances chargées par appel à l'API (« Afficher plus » charge la page suivante).
+const PAGE = 20;
 
 function Seances() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
+  const [page, setPage] = useState(null); // { items, total, nextCursor }
   const [error, setError] = useState(null);
+  const [moreError, setMoreError] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebouncedValue(query);
   const { design } = useDesign();
   const [statut, setStatut] = useState("toutes");
   const [toutAfficher, setToutAfficher] = useState(false);
   const [affichage, setAffichage] = useState("liste");
 
+  // Recherche et filtre appliqués par l'API, qui renvoie une page à la fois.
+  // « À venir » / « Terminées » coupent à minuit (heure locale), comme isUpcoming.
+  const paramsKey = useMemo(() => {
+    const params = isAdmin ? {} : { profilId: user.id };
+    const q = debouncedQuery.trim();
+    if (q) params.q = q;
+    const minuit = new Date(new Date().toDateString()).toISOString();
+    if (statut === "avenir") params.from = minuit;
+    if (statut === "terminees") params.before = minuit;
+    return JSON.stringify(params);
+  }, [isAdmin, user.id, debouncedQuery, statut]);
+
   // Une nouvelle recherche ou un nouveau filtre repart sur l'aperçu.
-  useEffect(() => setToutAfficher(false), [query, statut]);
+  useEffect(() => setToutAfficher(false), [paramsKey]);
 
   useEffect(() => {
+    let cancelled = false;
+    setError(null);
+    setMoreError(null);
     circuitsApi
-      .list(isAdmin ? {} : { profilId: user.id })
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, [user.id, isAdmin]);
+      .list({ ...JSON.parse(paramsKey), limit: PAGE })
+      .then((res) => !cancelled && setPage(res))
+      .catch((e) => !cancelled && setError(e.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [paramsKey]);
 
-  const filtered = useMemo(() => {
-    if (!data) return [];
-    const q = query.trim().toLowerCase();
-    const parStatut = statut === "toutes" ? data : data.filter((c) => isUpcoming(c) === (statut === "avenir"));
-    if (!q) return parStatut;
-    return parStatut.filter((c) => c.nom.toLowerCase().includes(q) || c.exercices?.some((ex) => ex.exercice.toLowerCase().includes(q)));
-  }, [data, query, statut]);
+  async function loadMore() {
+    if (!page?.nextCursor) return;
+    setLoadingMore(true);
+    setMoreError(null);
+    try {
+      const res = await circuitsApi.list({ ...JSON.parse(paramsKey), limit: PAGE, cursor: page.nextCursor });
+      setPage((p) => ({ items: [...p.items, ...res.items], total: res.total, nextCursor: res.nextCursor }));
+    } catch (e) {
+      setMoreError(e.message);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const filtered = page?.items ?? [];
+  const total = page?.total ?? 0;
+  const data = page;
 
   return (
     <div>
@@ -109,7 +142,13 @@ function Seances() {
             {(toutAfficher ? filtered : filtered.slice(0, APERCU)).map((circuit) => (
               <SeanceCard key={circuit.id} circuit={circuit} showParticipants={isAdmin} profilId={isAdmin ? null : user.id} />
             ))}
-            {filtered.length > APERCU && (
+            {toutAfficher && page?.nextCursor && (
+              <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? "Chargement..." : `Afficher plus (${filtered.length} sur ${total})`}
+              </Button>
+            )}
+            {moreError && <p className="text-caption text-center text-destructive">{moreError}</p>}
+            {total > APERCU && (
               <Button variant="outline" onClick={() => setToutAfficher((v) => !v)} aria-expanded={toutAfficher}>
                 {toutAfficher ? (
                   <>
@@ -117,7 +156,7 @@ function Seances() {
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4" /> Voir tout ({filtered.length})
+                    <Plus className="w-4 h-4" /> Voir tout ({total})
                   </>
                 )}
               </Button>

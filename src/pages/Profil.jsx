@@ -24,6 +24,7 @@ function Profil() {
   const { design } = useDesign();
   const [form, setForm] = useState({ poids: user.poids ?? "", taille: user.taille ?? "", age: user.age ?? "", blessures: user.blessures ?? "" });
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [stats, setStats] = useState(null);
   // Social : recherche de coachs (sportif) ou liste des abonnés (coach).
   const [socialOpen, setSocialOpen] = useState(false);
@@ -35,12 +36,13 @@ function Profil() {
       const gradees = circuits.map((c) => computeScoreForProfil(c.exercices, user.id)).filter((s) => s.graded);
       const moyenne = gradees.length ? gradees.reduce((sum, g) => sum + g.moyenne10, 0) / gradees.length : 0;
       setStats({ total: circuits.length, moyenne });
-    });
+    }, () => setStats(null));
   }, [user.id, isAdmin]);
 
   async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
+    setSaveError(null);
     try {
       const updated = await profilsApi.update(user.id, {
         poids: form.poids ? Number(form.poids) : null,
@@ -49,6 +51,8 @@ function Profil() {
         blessures: form.blessures || null,
       });
       updateUser({ ...user, ...updated });
+    } catch (err) {
+      setSaveError(err.message);
     } finally {
       setSaving(false);
     }
@@ -84,6 +88,11 @@ function Profil() {
           En savoir plus
         </Link>
       </p>
+      {saveError && (
+        <p className="text-caption text-destructive" role="alert">
+          {saveError}
+        </p>
+      )}
       <Button type="submit" variant="secondary" disabled={saving}>
         {saving ? "Enregistrement..." : "Enregistrer"}
       </Button>

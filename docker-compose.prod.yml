@@ -20,6 +20,7 @@ services:
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - AUTH_RATE_LIMIT=${AUTH_RATE_LIMIT:-10}
       # Le front appelle l'API depuis son propre sous-domaine : origine autorisée (CORS).
       - CORS_ORIGIN=${FRONT_URL:?FRONT_URL doit être défini dans .env (voir .env.example)}
       # Un seul reverse proxy devant l'API : on lui fait confiance pour l'IP du client.

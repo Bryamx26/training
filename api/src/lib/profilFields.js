@@ -13,6 +13,8 @@ const PUBLIC_FIELDS = {
   role: true,
   demandeCoach: true,
   cguAccepteesLe: true,
+  // Coach créateur du compte : le front n'affiche les droits complets qu'à lui.
+  creeParId: true,
   createdAt: true,
 };
 

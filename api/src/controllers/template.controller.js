@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const HttpError = require("../lib/httpError");
+const { parseId } = require("../lib/validation");
 const { parseExercice, requiredName, optionalText, optionalType, invalid } = require("../lib/exerciceData");
 
 // Templates de séance. Ils sont personnels : chaque requête est limitée au
@@ -23,7 +24,7 @@ function parseTemplateBody(body) {
 // Vérifie que le template existe ET appartient au coach connecté.
 async function findOwnTemplate(req) {
   const template = await prisma.circuitTemplate.findFirst({
-    where: { id: Number(req.params.id), coachId: req.user.id },
+    where: { id: parseId(req.params.id), coachId: req.user.id },
     include: { exercices: EXERCICES },
   });
   if (!template) throw new HttpError(404, "Template introuvable", "TEMPLATE_NOT_FOUND");

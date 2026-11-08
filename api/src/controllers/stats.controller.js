@@ -2,23 +2,23 @@ const prisma = require("../lib/prisma");
 const HttpError = require("../lib/httpError");
 const { assertCanViewProfil } = require("../lib/profilAccess");
 const { defaultMuscles } = require("../lib/exerciceCatalogue");
+const { parseDay } = require("../lib/validation");
 
 // Statistiques d'entraînement d'un profil (soi-même, ou un sportif lié au coach).
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Début du jour (UTC) d'une date : mêmes bornes que les dates « AAAA-MM-JJ »
+// renvoyées par toISOString(), quel que soit le fuseau du serveur.
+function startOfUtcDay(d) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
 
 async function targetProfilId(req) {
   const profilId = req.query.profilId ? Number(req.query.profilId) : req.user.id;
   if (!Number.isInteger(profilId) || profilId <= 0) throw new HttpError(400, "profilId invalide", "VALIDATION_ERROR");
   await assertCanViewProfil(req.user, profilId);
   return profilId;
-}
-
-function parseDay(value, fallback) {
-  if (!value) return fallback;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) throw new HttpError(400, "Date invalide", "VALIDATION_ERROR");
-  return d;
 }
 
 // GET /api/stats/muscles?profilId=&from=&to= — séries et volume (kg × reps) par
@@ -30,12 +30,12 @@ async function muscles(req, res) {
   const now = new Date();
   const to = parseDay(req.query.to, now);
   const from = parseDay(req.query.from, new Date(to.getTime() - 6 * DAY_MS));
-  const end = new Date(Math.min(new Date(to.toDateString()).getTime() + DAY_MS, now.getTime() + DAY_MS));
+  const end = new Date(Math.min(startOfUtcDay(to).getTime() + DAY_MS, now.getTime() + DAY_MS));
 
   const [allMuscles, circuits] = await Promise.all([
     prisma.muscle.findMany({ orderBy: { nom: "asc" } }),
     prisma.circuit.findMany({
-      where: { date: { gte: new Date(from.toDateString()), lt: end }, personnes: { some: { profilId } } },
+      where: { date: { gte: startOfUtcDay(from), lt: end }, personnes: { some: { profilId } } },
       select: {
         exercices: {
           select: {
