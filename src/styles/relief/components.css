@@ -34,7 +34,7 @@
 }
 [data-design="relief"] .st-tabbar-inner {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 8px;
   border-radius: var(--r-nav);
@@ -427,6 +427,12 @@
   font-size: 13px;
   font-weight: 800;
   box-shadow: var(--pressed);
+}
+[data-design="relief"] .rl-trend--down {
+  color: var(--danger);
+}
+[data-design="relief"] .rl-trend--flat {
+  color: var(--ink-muted);
 }
 [data-design="relief"] .rl-trend svg {
   width: 14px;

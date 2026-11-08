@@ -49,4 +49,25 @@ function parseExercice(raw, ordre) {
   return data;
 }
 
-module.exports = { parseExercice, requiredName, optionalText, optionalType, invalid };
+// Modification partielle : seuls les champs envoyés sont validés et renvoyés.
+function parseExercicePatch(raw) {
+  if (!raw || typeof raw !== "object") throw invalid("Le corps doit être un objet");
+  const data = {};
+  if (raw.exercice !== undefined) data.exercice = requiredName(raw.exercice, "Le nom de l'exercice");
+  for (const field of TEXT_FIELDS) if (raw[field] !== undefined) data[field] = optionalText(raw[field], field);
+  for (const field of INT_FIELDS) if (raw[field] !== undefined) data[field] = optionalNumber(raw[field], field, { integer: true });
+  if (raw.lest !== undefined) data.lest = optionalNumber(raw.lest, "lest", { integer: false });
+  if (raw.ordre !== undefined) data.ordre = optionalNumber(raw.ordre, "ordre", { integer: true }) ?? 0;
+  return data;
+}
+
+// Muscles travaillés : liste d'identifiants, ou undefined si non envoyée.
+function parseMuscleIds(value) {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) throw invalid("muscleIds doit être une liste");
+  const ids = value.map(Number);
+  if (ids.some((n) => !Number.isInteger(n) || n <= 0)) throw invalid("muscleIds doit contenir des identifiants");
+  return [...new Set(ids)];
+}
+
+module.exports = { parseExercice, parseExercicePatch, parseMuscleIds, requiredName, optionalText, optionalType, invalid };

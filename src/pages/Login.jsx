@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import LegalLinks from "../components/legal/LegalLinks";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useDesign } from "../context/DesignContext";
@@ -85,6 +86,8 @@ function Login() {
               Créer un compte
             </Link>
           </p>
+
+          <LegalLinks />
         </div>
       </div>
     );
@@ -117,6 +120,8 @@ function Login() {
             Créer un compte
           </Link>
         </p>
+
+        <LegalLinks />
       </div>
     </div>
   );

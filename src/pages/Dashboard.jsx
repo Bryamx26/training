@@ -10,9 +10,9 @@ import Button from "../components/ui/Button";
 import { Loading } from "../components/ui/States";
 import { computeScoreForProfil } from "../lib/score";
 import BrandMark from "../components/trace/BrandMark";
-import TraceKpiTile from "../components/trace/KpiTile";
 import ScorePanel from "../components/trace/ScorePanel";
-import ReliefKpiTile from "../components/relief/KpiTile";
+import KpiTile from "../components/ui/KpiTile";
+import { isUpcoming } from "../lib/seance";
 import ScoreRing from "../components/relief/ScoreRing";
 
 // En-tête Relief de l'accueil : sur-titre, nom en grand et avatar.
@@ -26,10 +26,6 @@ function ReliefGreeting({ label, title, user }) {
       <Avatar nom={user.nom} prenom={user.prenom} size={52} />
     </div>
   );
-}
-
-function isUpcoming(circuit) {
-  return new Date(circuit.date) >= new Date(new Date().toDateString());
 }
 
 function DashboardUtilisateur({ user }) {
@@ -167,10 +163,10 @@ function DashboardAdmin({ user }) {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <TraceKpiTile label="Sportifs" value={sportifs.length} />
-          <TraceKpiTile label="Séances créées" value={circuits.length} />
-          <TraceKpiTile label="À venir" value={aVenir.length} tone="cobalt" />
-          <TraceKpiTile label="Progression moy." value={`${moyennePct}%`} featured segments={{ filled: moyennePct / 10, total: 10 }} />
+          <KpiTile label="Sportifs" value={sportifs.length} />
+          <KpiTile label="Séances créées" value={circuits.length} />
+          <KpiTile label="À venir" value={aVenir.length} tone="info" />
+          <KpiTile label="Progression moy." value={`${moyennePct}%`} tone="progress" progress={{ value: moyennePct, max: 100 }} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -228,10 +224,10 @@ function DashboardAdmin({ user }) {
       <ReliefGreeting label="Tableau de bord" title={`Coach ${user.prenom}`} user={user} />
 
       <div className="grid grid-cols-2 gap-4">
-        <ReliefKpiTile label="Sportifs" value={sportifs.length} />
-        <ReliefKpiTile label="Séances créées" value={circuits.length} />
-        <ReliefKpiTile label="À venir" value={aVenir.length} tone="info" />
-        <ReliefKpiTile label="Progression moy." value={`${moyennePct}%`} tone="progress" bar={moyennePct} />
+        <KpiTile label="Sportifs" value={sportifs.length} />
+        <KpiTile label="Séances créées" value={circuits.length} />
+        <KpiTile label="À venir" value={aVenir.length} tone="info" />
+        <KpiTile label="Progression moy." value={`${moyennePct}%`} tone="progress" progress={{ value: moyennePct, max: 100 }} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">

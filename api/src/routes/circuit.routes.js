@@ -11,6 +11,9 @@ router.use(requireAuth);
 router.get("/", asyncHandler(controller.list));
 router.get("/:id", asyncHandler(controller.getById));
 
+// Saisie de ce que le participant connecté a réellement fait.
+router.put("/:id/realisation", asyncHandler(controller.saveRealisation));
+
 // Écriture : réservée au staff.
 router.post("/", requireStaff, asyncHandler(controller.create));
 router.put("/:id", requireStaff, asyncHandler(controller.update));

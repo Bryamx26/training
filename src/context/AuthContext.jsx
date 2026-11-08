@@ -1,71 +1,80 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { auth as authApi, setAuthToken, setSessionExpiredHandler } from "../lib/api";
+import { auth as authApi, setSessionExpiredHandler } from "../lib/api";
 
 const AuthContext = createContext(null);
 
+// Seul le profil est gardé dans le navigateur, pour afficher l'application
+// sans attendre le réseau. Le jeton de session vit dans un cookie httpOnly,
+// inaccessible au JavaScript : il n'est jamais stocké ici.
 const PROFIL_KEY = "profil";
-const TOKEN_KEY = "token";
+// Cache du service worker (voir vite.config.js).
+const API_CACHE = "api-data";
+// Clé de l'ancienne version, qui stockait le jeton : supprimée au chargement.
+const LEGACY_TOKEN_KEY = "token";
 
-// Session enregistrée : le profil et son jeton vont ensemble. Une ancienne
-// session sans jeton (avant l'authentification de l'API) est ignorée.
-function readStoredSession() {
+function readStoredProfil() {
   try {
-    const profil = JSON.parse(localStorage.getItem(PROFIL_KEY));
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (profil && token) return { profil, token };
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    return JSON.parse(localStorage.getItem(PROFIL_KEY));
   } catch {
-    // Données corrompues : on repart d'une session vide.
+    return null;
   }
-  localStorage.removeItem(PROFIL_KEY);
-  localStorage.removeItem(TOKEN_KEY);
-  return null;
+}
+
+function storeProfil(profil) {
+  try {
+    if (profil) localStorage.setItem(PROFIL_KEY, JSON.stringify(profil));
+    else localStorage.removeItem(PROFIL_KEY);
+  } catch {
+    // Stockage indisponible : la session reste valable tant que l'onglet est ouvert.
+  }
 }
 
 export function AuthProvider({ children }) {
-  // Lecture synchrone : le jeton est en place avant le premier appel API des pages.
-  const [user, setUser] = useState(() => {
-    const session = readStoredSession();
-    setAuthToken(session?.token ?? null);
-    return session?.profil ?? null;
-  });
+  const [user, setUser] = useState(readStoredProfil);
 
-  function startSession({ token, profil }) {
-    localStorage.setItem(PROFIL_KEY, JSON.stringify(profil));
-    localStorage.setItem(TOKEN_KEY, token);
-    setAuthToken(token);
+  const setProfil = useCallback((profil) => {
+    storeProfil(profil);
     setUser(profil);
     return profil;
-  }
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(PROFIL_KEY);
-    localStorage.removeItem(TOKEN_KEY);
-    setAuthToken(null);
-    setUser(null);
   }, []);
 
-  // Jeton refusé par l'API : on déconnecte, ProtectedRoute renvoie vers /login.
+  // Session refusée par l'API : on oublie le profil, ProtectedRoute renvoie vers /login.
+  const forget = useCallback(() => setProfil(null), [setProfil]);
+
+  const logout = useCallback(async () => {
+    forget();
+    await authApi.logout().catch(() => {});
+    // Données de l'API gardées pour le mode hors ligne : propres à ce compte.
+    await window.caches?.delete(API_CACHE).catch(() => {});
+  }, [forget]);
+
   useEffect(() => {
-    setSessionExpiredHandler(logout);
-  }, [logout]);
+    setSessionExpiredHandler(forget);
+  }, [forget]);
+
+  // Au démarrage, vérifie que la session est toujours valable et rafraîchit le
+  // profil (rôle changé par un admin…). Hors ligne, on garde le profil connu.
+  useEffect(() => {
+    if (!readStoredProfil()) return;
+    authApi
+      .me()
+      .then(({ profil }) => setProfil(profil))
+      .catch(() => {});
+  }, [setProfil]);
 
   async function login(mail, motDePasse) {
-    return startSession(await authApi.login(mail, motDePasse));
+    return setProfil((await authApi.login(mail, motDePasse)).profil);
   }
 
   async function loginWithGoogle(credential) {
-    return startSession(await authApi.google(credential));
-  }
-
-  function updateUser(profil) {
-    localStorage.setItem(PROFIL_KEY, JSON.stringify(profil));
-    setUser(profil);
+    return setProfil((await authApi.google(credential)).profil);
   }
 
   const isAdmin = user?.role === "ADMIN" || user?.role === "COACH";
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, updateUser, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, updateUser: setProfil, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

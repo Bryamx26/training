@@ -1,5 +1,5 @@
 import { Calendar, Users } from "lucide-react";
-import { Tag, StatusPill } from "./Tags";
+import { Tag, StatusPill } from "../ui/Tags";
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });

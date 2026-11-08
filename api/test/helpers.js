@@ -9,6 +9,9 @@ const { execSync } = require("child_process");
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sport-api-test-"));
 process.env.DATABASE_URL = `file:${path.join(dir, "test.db")}`;
 process.env.JWT_SECRET = "secret-de-test";
+// Les tests appellent souvent les routes de connexion : limite relevée, sauf
+// pour le test qui la vérifie (il la fixe avant d'importer ce fichier).
+process.env.AUTH_RATE_LIMIT ??= "1000";
 
 execSync("npx prisma migrate deploy --schema=../database/schema.prisma", {
   cwd: path.join(__dirname, ".."),

@@ -8,9 +8,10 @@ import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 import HeroBand from "../components/trace/HeroBand";
-import TraceSegmentedControl from "../components/trace/SegmentedControl";
-import ReliefSegmentedControl from "../components/relief/SegmentedControl";
+import SegmentedControl from "../components/ui/SegmentedControl";
 import Separator from "../components/relief/Separator";
+import CguCheckbox from "../components/legal/CguCheckbox";
+import LegalLinks from "../components/legal/LegalLinks";
 
 const ROLES = [
   { value: "USER", label: "Sportif" },
@@ -26,6 +27,7 @@ function Register() {
   const [mail, setMail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [role, setRole] = useState("USER");
+  const [accepteCgu, setAccepteCgu] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +36,7 @@ function Register() {
     setError(null);
     setLoading(true);
     try {
-      await profilsApi.create({ prenom, nom, mail, motDePasse, role });
+      await profilsApi.create({ prenom, nom, mail, motDePasse, role, accepteCgu });
       await login(mail, motDePasse);
       navigate("/", { replace: true });
     } catch (err) {
@@ -50,14 +52,7 @@ function Register() {
         <Input label="Prénom" autoComplete="given-name" value={prenom} onChange={(e) => setPrenom(e.target.value)} required />
         <Input label="Nom" autoComplete="family-name" value={nom} onChange={(e) => setNom(e.target.value)} required />
       </div>
-      <Input
-        label="E-mail"
-        type="email"
-        autoComplete="email"
-        value={mail}
-        onChange={(e) => setMail(e.target.value)}
-        required
-      />
+      <Input label="E-mail" type="email" autoComplete="email" value={mail} onChange={(e) => setMail(e.target.value)} required />
       <Input
         label="Mot de passe"
         type="password"
@@ -81,13 +76,15 @@ function Register() {
 
             <div className="flex flex-col gap-2">
               <span className="t-label">Je suis…</span>
-              <TraceSegmentedControl
-                options={ROLES}
-                value={role}
-                onChange={setRole}
-                label="Je suis…"
-              />
+              <SegmentedControl options={ROLES} value={role} onChange={setRole} label="Je suis…" />
+              {role === "COACH" && (
+                <p className="text-caption text-muted-foreground" role="status">
+                  Ton compte démarre en sportif : un administrateur validera ta demande de compte coach.
+                </p>
+              )}
             </div>
+
+            <CguCheckbox checked={accepteCgu} onChange={setAccepteCgu} />
 
             {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
@@ -108,6 +105,8 @@ function Register() {
               Se connecter
             </Link>
           </p>
+
+          <LegalLinks />
         </div>
       </div>
     );
@@ -130,8 +129,15 @@ function Register() {
 
           <div className="flex flex-col gap-2">
             <span className="rl-label">Je suis…</span>
-            <ReliefSegmentedControl options={ROLES} value={role} onChange={setRole} label="Je suis…" />
+            <SegmentedControl options={ROLES} value={role} onChange={setRole} label="Je suis…" />
+            {role === "COACH" && (
+              <p className="text-caption text-muted-foreground" role="status">
+                Ton compte démarre en sportif : un administrateur validera ta demande de compte coach.
+              </p>
+            )}
           </div>
+
+          <CguCheckbox checked={accepteCgu} onChange={setAccepteCgu} />
 
           {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
@@ -150,6 +156,8 @@ function Register() {
             Se connecter
           </Link>
         </p>
+
+        <LegalLinks />
       </div>
     </div>
   );

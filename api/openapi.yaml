@@ -5,19 +5,22 @@ info:
   description: |
     API REST de Sport Track (suivi sportif coach / sportif).
 
-    **Authentification** : `POST /auth/login` (ou `/auth/google`) renvoie un jeton
-    à envoyer dans `Authorization: Bearer <jeton>`.
+    **Authentification** : `POST /auth/login` (ou `/auth/google`) pose un cookie
+    de session `session` (httpOnly, SameSite=Lax) que le navigateur renvoie seul.
+    Les clients hors navigateur peuvent aussi envoyer `Authorization: Bearer <jeton>`.
+    Connexion et inscription publique sont limitées (429 `TOO_MANY_REQUESTS`).
 
     **Rôles** : `USER` (sportif), `COACH`, `ADMIN`. COACH et ADMIN sont des coachs
     (« staff ») : ils créent les séances, notent les sportifs et ont des abonnés.
 
     **Erreurs** : `{ "error": "message lisible", "code": "CODE_METIER" }`. Le `code`
-    est stable (ex. `UNAUTHENTICATED`, `FORBIDDEN`, `VALIDATION_ERROR`,
+    est stable (ex. `UNAUTHENTICATED`, `FORBIDDEN`, `VALIDATION_ERROR`, `MAIL_TAKEN`,
     `ATHLETE_NOT_SUBSCRIBED`, `TEMPLATE_NOT_FOUND`).
 servers:
   - url: /api
 
 security:
+  - cookieAuth: []
   - bearerAuth: []
 
 tags:
@@ -29,6 +32,8 @@ tags:
     description: Modèles de séance personnels d'un coach.
   - name: Abonnements
   - name: Muscles
+  - name: Notifications
+  - name: Statistiques
 
 paths:
   /auth/login:
@@ -66,6 +71,20 @@ paths:
       responses:
         "200": { $ref: "#/components/responses/Session" }
         "401": { $ref: "#/components/responses/Error" }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Profil de la session en cours
+      responses:
+        "200": { $ref: "#/components/responses/Session" }
+        "401": { $ref: "#/components/responses/Error" }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Supprime le cookie de session
+      security: []
+      responses:
+        "204": { description: Déconnecté }
 
   /profils:
     get:
@@ -134,6 +153,8 @@ paths:
       parameters:
         - { name: profilId, in: query, schema: { type: integer } }
         - { name: auteurId, in: query, schema: { type: integer } }
+        - { name: from, in: query, description: "Date de début incluse (AAAA-MM-JJ)", schema: { type: string, format: date } }
+        - { name: to, in: query, description: "Date de fin incluse (AAAA-MM-JJ)", schema: { type: string, format: date } }
       responses:
         "200":
           description: Séances
@@ -147,6 +168,8 @@ paths:
         `niveau` est un texte libre (valeur prédéfinie ou difficulté personnalisée).
         Le nom d'un exercice est libre (exercice du catalogue ou saisi par le coach).
         Chaque participant doit être un abonné actif du coach (403 `ATHLETE_NOT_SUBSCRIBED` sinon).
+        `repetition.semaines` = N crée N séances identiques à une semaine d'intervalle ;
+        la réponse est la première, avec `occurrenceIds`. Les participants sont notifiés.
       requestBody:
         required: true
         content:
@@ -158,6 +181,7 @@ paths:
                   properties:
                     participantIds: { type: array, items: { type: integer } }
                     exercices: { type: array, items: { $ref: "#/components/schemas/ExerciceInput" } }
+                    repetition: { type: object, properties: { semaines: { type: integer, minimum: 1, maximum: 52 } } }
       responses:
         "201":
           description: Séance créée
@@ -484,6 +508,65 @@ paths:
               schema: { type: array, items: { $ref: "#/components/schemas/Profil" } }
         "403": { $ref: "#/components/responses/Error" }
 
+  /circuits/{id}/realisation:
+    parameters: [{ $ref: "#/components/parameters/Id" }]
+    put:
+      tags: [Séances]
+      summary: Enregistrer ce que le participant connecté a réalisé
+      description: Remplace la saisie précédente de cette séance. Le coach est notifié à la première saisie.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RealisationInput" } } }
+      responses:
+        "200": { description: Réalisation enregistrée, content: { application/json: { schema: { $ref: "#/components/schemas/Realisation" } } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+  /me/notifications:
+    get:
+      tags: [Notifications]
+      summary: 50 dernières notifications et nombre de non lues
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonLues: { type: integer }
+                  notifications: { type: array, items: { $ref: "#/components/schemas/Notification" } }
+  /me/notifications/read:
+    post:
+      tags: [Notifications]
+      summary: Marquer comme lues (toutes sans `ids`)
+      requestBody:
+        content: { application/json: { schema: { type: object, properties: { ids: { type: array, items: { type: integer } } } } } }
+      responses:
+        "204": { description: Marquées comme lues }
+
+  /stats/muscles:
+    get:
+      tags: [Statistiques]
+      summary: Séries et volume par groupe musculaire sur une période
+      description: Séries réalisées si la séance a été saisie, sinon séries prévues des séances passées. 7 derniers jours par défaut.
+      parameters:
+        - { name: profilId, in: query, schema: { type: integer }, description: "Soi-même par défaut" }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Volume par muscle }
+        "403": { $ref: "#/components/responses/Error" }
+  /stats/exercices:
+    get:
+      tags: [Statistiques]
+      summary: Progression réelle par exercice (charge max, reps max, volume) et records
+      parameters:
+        - { name: profilId, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: Progression par exercice }
+        "403": { $ref: "#/components/responses/Error" }
+
   /muscles:
     get:
       tags: [Muscles]
@@ -498,6 +581,7 @@ paths:
 
 components:
   securitySchemes:
+    cookieAuth: { type: apiKey, in: cookie, name: session }
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
 
   parameters:
@@ -516,7 +600,6 @@ components:
           schema:
             type: object
             properties:
-              token: { type: string }
               profil: { $ref: "#/components/schemas/Profil" }
 
   schemas:
@@ -543,6 +626,7 @@ components:
         age: { type: integer, nullable: true }
         blessures: { type: string, nullable: true }
         role: { type: string, enum: [USER, COACH, ADMIN] }
+        demandeCoach: { type: boolean, description: "Inscription « coach » en attente de validation par un admin" }
         createdAt: { type: string, format: date-time }
     ProfilInput:
       type: object
@@ -550,7 +634,7 @@ components:
         nom: { type: string }
         prenom: { type: string }
         mail: { type: string }
-        motDePasse: { type: string }
+        motDePasse: { type: string, minLength: 8 }
         poids: { type: number }
         taille: { type: number }
         age: { type: integer }
@@ -582,6 +666,7 @@ components:
         amplitude: { type: string, nullable: true }
         url: { type: string, nullable: true }
         ordre: { type: integer }
+        muscleIds: { type: array, items: { type: integer }, description: "Séances uniquement : muscles travaillés" }
     Exercice:
       allOf:
         - $ref: "#/components/schemas/ExerciceInput"
@@ -654,3 +739,38 @@ components:
                 properties:
                   id: { type: integer }
                   templateId: { type: integer }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string, example: NOUVELLE_SEANCE }
+        message: { type: string }
+        lien: { type: string, nullable: true, example: /seances/12 }
+        lu: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    RealisationInput:
+      type: object
+      required: [series]
+      properties:
+        commentaire: { type: string, nullable: true }
+        series:
+          type: array
+          items:
+            type: object
+            required: [exerciceId, serie]
+            properties:
+              exerciceId: { type: integer }
+              serie: { type: integer, minimum: 1 }
+              reps: { type: integer, nullable: true }
+              lest: { type: number, nullable: true }
+              duree: { type: integer, nullable: true }
+    Realisation:
+      allOf:
+        - $ref: "#/components/schemas/RealisationInput"
+        - type: object
+          properties:
+            id: { type: integer }
+            circuitId: { type: integer }
+            profilId: { type: integer }

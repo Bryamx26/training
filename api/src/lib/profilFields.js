@@ -11,6 +11,8 @@ const PUBLIC_FIELDS = {
   age: true,
   blessures: true,
   role: true,
+  demandeCoach: true,
+  cguAccepteesLe: true,
   createdAt: true,
 };
 

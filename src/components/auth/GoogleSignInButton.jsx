@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useDesign } from "../../context/DesignContext";
 import Button from "../ui/Button";
@@ -31,9 +31,12 @@ function GoogleSignInButton() {
   const navigate = useNavigate();
   const buttonRef = useRef(null);
   const [error, setError] = useState(null);
+  // Le script Google n'est chargé qu'après un clic : avant, aucune donnée
+  // (adresse IP, cookies Google) n'est transmise à Google.
+  const [activated, setActivated] = useState(false);
 
   useEffect(() => {
-    if (!CLIENT_ID) return;
+    if (!CLIENT_ID || !activated) return;
     let cancelled = false;
 
     loadGoogleScript().then(() => {
@@ -63,7 +66,7 @@ function GoogleSignInButton() {
     return () => {
       cancelled = true;
     };
-  }, [loginWithGoogle, navigate]);
+  }, [activated, loginWithGoogle, navigate]);
 
   if (!CLIENT_ID) {
     if (design === "relief") {
@@ -78,7 +81,27 @@ function GoogleSignInButton() {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div ref={buttonRef} />
+      {activated ? (
+        <div ref={buttonRef} className="min-h-[44px] flex items-center">
+          <span className="text-caption text-muted-foreground">Chargement de Google…</span>
+        </div>
+      ) : (
+        <Button variant={design === "relief" ? "soft" : "outline"} onClick={() => setActivated(true)} className="w-full">
+          Continuer avec Google
+        </Button>
+      )}
+      <p className="text-caption text-center text-muted-foreground">
+        {activated ? "Le bouton Google est chargé : clique dessus pour continuer. " : ""}
+        En continuant avec Google, tu acceptes les{" "}
+        <Link to="/legal/cgu" className="underline">
+          conditions d'utilisation
+        </Link>{" "}
+        et la{" "}
+        <Link to="/legal/confidentialite" className="underline">
+          politique de confidentialité
+        </Link>
+        .
+      </p>
       {error && <p className="text-caption text-center text-destructive">{error}</p>}
     </div>
   );

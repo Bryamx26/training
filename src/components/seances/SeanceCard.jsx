@@ -1,15 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { computeScoreForProfil } from "../../lib/score";
+import { isUpcoming, typeLabel } from "../../lib/seance";
 import { useDesign } from "../../context/DesignContext";
 import TraceSessionCard from "../trace/SessionCard";
 import ReliefSessionCard from "../relief/SessionCard";
 
-const TYPE_LABEL = {
-  FORCE: "Force",
-  ENDURANCE: "Endurance",
-  HYPERTROPHIE: "Hypertrophie",
-  FIGURE: "Figure",
-};
 
 function SeanceCard({ circuit, showParticipants = false, profilId = null }) {
   const navigate = useNavigate();
@@ -20,11 +15,11 @@ function SeanceCard({ circuit, showParticipants = false, profilId = null }) {
   const singleProfilId = profilId ?? (personnes.length === 1 ? personnes[0].profilId : null);
   const score = singleProfilId != null ? computeScoreForProfil(circuit.exercices, singleProfilId) : null;
   const gradedCount = personnes.filter((p) => computeScoreForProfil(circuit.exercices, p.profilId).graded).length;
-  const upcoming = new Date(circuit.date) >= new Date(new Date().toDateString());
+  const upcoming = isUpcoming(circuit);
 
   const props = {
     circuit,
-    typeLabel: TYPE_LABEL[circuit.type] ?? circuit.type,
+    typeLabel: typeLabel(circuit.type),
     personnes,
     showParticipants,
     score,

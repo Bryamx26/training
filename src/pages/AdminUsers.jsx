@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { profils as profilsApi, me as meApi } from "../lib/api";
 import TopAppBar from "../components/layout/TopAppBar";
 import Avatar from "../components/ui/Avatar";
@@ -77,8 +78,60 @@ function UserForm({ initial, onCancel, onSaved }) {
   );
 }
 
+// Demandes de compte coach (inscriptions publiques « coach ») : visibles et
+// validées par un admin uniquement.
+function DemandesCoach() {
+  const [demandes, setDemandes] = useState(null);
+  const [error, setError] = useState(null);
+
+  function reload() {
+    profilsApi.demandesCoach().then(setDemandes, (e) => setError(e.message));
+  }
+
+  useEffect(reload, []);
+
+  async function decide(profil, accept) {
+    setError(null);
+    try {
+      await profilsApi.update(profil.id, accept ? { role: "COACH" } : { demandeCoach: false });
+      reload();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  if (!demandes?.length && !error) return null;
+
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="demandes-coach-title">
+      <h2 id="demandes-coach-title" className="text-label text-muted-foreground">
+        Demandes de compte coach
+      </h2>
+      {error && <p className="text-caption text-destructive">{error}</p>}
+      {demandes?.map((d) => (
+        <div key={d.id} className="card-surface flex items-center gap-3 p-4">
+          <Avatar nom={d.nom} prenom={d.prenom} size={40} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">
+              {d.prenom} {d.nom}
+            </p>
+            <p className="text-caption text-muted-foreground truncate">{d.mail}</p>
+          </div>
+          <Button size="sm" onClick={() => decide(d, true)} className="px-3 py-2" aria-label={`Valider ${d.prenom} ${d.nom} comme coach`}>
+            <Check className="w-4 h-4" /> Valider
+          </Button>
+          <button onClick={() => decide(d, false)} className="press p-2" aria-label={`Refuser la demande de ${d.prenom} ${d.nom}`}>
+            <X className="w-4 h-4 text-destructive" />
+          </button>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function AdminUsers() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [users, setUsers] = useState(null);
   const [formTarget, setFormTarget] = useState(null); // null = closed, {} = create, {id,...} = edit
 
@@ -117,6 +170,7 @@ function AdminUsers() {
       />
 
       <div className="px-5 flex flex-col gap-3 pb-8">
+        {user.role === "ADMIN" && <DemandesCoach />}
         {formTarget && <UserForm initial={formTarget.id ? formTarget : null} onCancel={() => setFormTarget(null)} onSaved={handleSaved} />}
 
         {!users && <Loading />}

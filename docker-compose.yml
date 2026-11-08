@@ -5,13 +5,18 @@ services:
       dockerfile: api/Dockerfile
     container_name: training-api
     working_dir: /workspace/api
-    command: sh -c "npx prisma migrate deploy --schema=../database/schema.prisma && npx prisma generate --schema=../database/schema.prisma && node ../database/seed.cjs && node src/index.js"
+    # node_modules vit dans un volume nommé, qui n'est rempli qu'à sa création :
+    # npm install au démarrage y ajoute les dépendances apparues depuis (rapide
+    # quand tout est déjà installé).
+    command: sh -c "npm install --no-audit --no-fund && npx prisma migrate deploy --schema=../database/schema.prisma && npx prisma generate --schema=../database/schema.prisma && node ../database/seed.cjs && node src/index.js"
     ports:
       - "4000:4000"
     environment:
       - PORT=4000
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET doit être défini dans .env (voir .env.example)}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
     volumes:
       - .:/workspace
       - api_node_modules:/workspace/api/node_modules
@@ -22,9 +27,9 @@ services:
       dockerfile: Dockerfile
     container_name: training-web
     working_dir: /workspace
-    command: npx vite --host 0.0.0.0 --port 5173
+    command: sh -c "npm install --no-audit --no-fund && npx vite --host 0.0.0.0 --port 5174"
     ports:
-      - "5173:5173"
+      - "5174:5174"
     environment:
       - VITE_API_PROXY_TARGET=http://api:4000
       - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

@@ -1,32 +1,34 @@
-const BASE_URL = "/api";
+// Adresse de l'API, fixée à la compilation (VITE_API_URL, ex.
+// "https://api-sport-track.mon-domaine.fr"). Vide : même origine que le front
+// (proxy Vite en dev, nginx sinon).
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const BASE_URL = `${API_ORIGIN}/api`;
 
-// Jeton de session envoyé à chaque requête. Il est fourni par AuthContext,
-// qui gère aussi sa persistance.
-let authToken = null;
+// URL complète d'une route de l'API, pour les liens directs (téléchargements…).
+export const apiUrl = (path) => `${BASE_URL}${path}`;
+
+// La session est portée par un cookie httpOnly posé par l'API : le navigateur
+// l'envoie tout seul et le JavaScript de la page n'y a jamais accès.
 let onSessionExpired = () => {};
 
-export function setAuthToken(token) {
-  authToken = token;
-}
-
-// Appelé quand l'API refuse un jeton (expiré, compte supprimé…).
+// Appelé quand l'API refuse la session (expirée, compte supprimé…).
 export function setSessionExpiredHandler(handler) {
   onSessionExpired = handler;
 }
 
 async function request(path, options = {}) {
   const headers = { "Content-Type": "application/json" };
-  if (authToken) headers.Authorization = `Bearer ${authToken}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  // "include" : le cookie de session est envoyé aussi quand l'API est sur un
+  // autre sous-domaine (l'API doit alors autoriser le front dans CORS_ORIGIN).
+  const res = await fetch(apiUrl(path), { ...options, headers, credentials: "include" });
 
   if (res.status === 204) return null;
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    // Un 401 avec un jeton = session invalide. Sans jeton (ex. mauvais mot de
-    // passe à la connexion), c'est une erreur normale à afficher.
-    if (res.status === 401 && authToken) onSessionExpired();
+    // SESSION_EXPIRED / UNAUTHENTICATED = plus de session valide. Un 401 de
+    // connexion (mauvais mot de passe) est une erreur normale à afficher.
+    if (res.status === 401 && ["SESSION_EXPIRED", "UNAUTHENTICATED"].includes(data?.code)) onSessionExpired();
     // `code` : identifiant métier renvoyé par l'API (ex. "ATHLETE_NOT_SUBSCRIBED").
     throw Object.assign(new Error(data?.error || `Erreur ${res.status}`), { status: res.status, code: data?.code });
   }
@@ -42,10 +44,13 @@ const del = (path) => request(path, { method: "DELETE" });
 export const auth = {
   login: (mail, motDePasse) => post("/auth/login", { mail, motDePasse }),
   google: (credential) => post("/auth/google", { credential }),
+  me: () => get("/auth/me"),
+  logout: () => post("/auth/logout"),
 };
 
 export const profils = {
   list: () => get("/profils"),
+  demandesCoach: () => get("/profils?demandeCoach=true"),
   get: (id) => get(`/profils/${id}`),
   create: (data) => post("/profils", data),
   update: (id, data) => put(`/profils/${id}`, data),
@@ -62,6 +67,8 @@ export const circuits = {
   update: (id, data) => put(`/circuits/${id}`, data),
   remove: (id) => del(`/circuits/${id}`),
   setParticipants: (id, participantIds) => put(`/circuits/${id}/participants`, { participantIds }),
+  // Ce que le participant connecté a réellement fait (séries, charges).
+  saveRealisation: (id, data) => put(`/circuits/${id}/realisation`, data),
 };
 
 export const exercices = {
@@ -97,6 +104,15 @@ export const coaches = {
 export const me = {
   coaches: () => get("/me/coaches"),
   subscribers: () => get("/me/subscribers"),
+  notifications: () => get("/me/notifications"),
+  // Sans `ids`, marque toutes les notifications comme lues.
+  markNotificationsRead: (ids) => post("/me/notifications/read", ids ? { ids } : {}),
+};
+
+// Statistiques d'entraînement (soi-même par défaut, ou un sportif suivi).
+export const stats = {
+  muscles: (params = {}) => get(`/stats/muscles?${new URLSearchParams(params)}`),
+  exercices: (params = {}) => get(`/stats/exercices?${new URLSearchParams(params)}`),
 };
 
 export const muscles = {

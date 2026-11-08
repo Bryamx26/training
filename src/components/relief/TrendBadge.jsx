@@ -1,9 +1,11 @@
-import { TrendingUp } from "lucide-react";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
-function TrendBadge({ children }) {
+// Pastille de tendance. `direction` : "up" (vert), "down" (rouge) ou "flat".
+function TrendBadge({ direction = "up", children, ...props }) {
+  const Icon = direction === "down" ? TrendingDown : direction === "flat" ? Minus : TrendingUp;
   return (
-    <span className="rl-trend">
-      <TrendingUp /> {children}
+    <span className={`rl-trend${direction === "up" ? "" : ` rl-trend--${direction}`}`} {...props}>
+      <Icon /> {children}
     </span>
   );
 }

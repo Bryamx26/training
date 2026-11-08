@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import SegmentedControl from "./SegmentedControl";
+import SegmentedControl from "../ui/SegmentedControl";
 
 const VUES = [
   { value: "semaine", label: "Semaine" },

@@ -2,15 +2,20 @@ const prisma = require("../lib/prisma");
 const HttpError = require("../lib/httpError");
 const { isAdmin } = require("../lib/permissions");
 const { findManageableCircuit } = require("../lib/circuitAccess");
-const { BASE_CATALOGUE } = require("../lib/exerciceCatalogue");
+const { BASE_CATALOGUE, defaultMuscles } = require("../lib/exerciceCatalogue");
+const { parseExercice, parseExercicePatch, parseMuscleIds } = require("../lib/exerciceData");
+const { notifyOnce } = require("../lib/notifications");
+const { validate } = require("../lib/validation");
+const schemas = require("../lib/schemas");
 
 const INCLUDE = { muscles: { include: { muscle: true } }, notes: true };
 
-// Charge un exercice et vérifie que l'utilisateur connecté gère sa séance.
+// Charge un exercice et vérifie que l'utilisateur connecté gère sa séance,
+// renvoyée ({ id, auteurId, personnes }).
 async function findManageableExercice(user, exerciceId) {
   const exercice = await prisma.exercice.findUnique({ where: { id: Number(exerciceId) }, select: { circuitId: true } });
   if (!exercice) throw new HttpError(404, "Exercice introuvable", "EXERCICE_NOT_FOUND");
-  await findManageableCircuit(user, exercice.circuitId);
+  return findManageableCircuit(user, exercice.circuitId);
 }
 
 function serialize(exercice) {
@@ -42,48 +47,19 @@ async function getById(req, res) {
 }
 
 async function create(req, res) {
-  const {
-    exercice,
-    description,
-    consignes,
-    objectif,
-    series,
-    nbRep,
-    duree,
-    tempsDeRepos,
-    tempo,
-    lest,
-    amplitude,
-    url,
-    ordre,
-    circuitId,
-    muscleIds,
-  } = req.body;
+  const { circuitId } = req.body ?? {};
+  if (!circuitId) throw new HttpError(400, "circuitId est requis", "VALIDATION_ERROR");
+  const circuit = await findManageableCircuit(req.user, circuitId);
 
-  if (!exercice || !circuitId) {
-    return res.status(400).json({ error: "exercice et circuitId sont requis" });
-  }
-  await findManageableCircuit(req.user, circuitId);
+  const data = parseExercice(req.body, 0);
+  data.ordre = parseExercicePatch({ ordre: req.body.ordre }).ordre ?? 0;
+  const muscleIds = parseMuscleIds(req.body.muscleIds);
 
   const created = await prisma.exercice.create({
     data: {
-      exercice,
-      description,
-      consignes,
-      objectif,
-      series,
-      nbRep,
-      duree,
-      tempsDeRepos,
-      tempo,
-      lest,
-      amplitude,
-      url,
-      ordre: ordre ?? 0,
-      circuitId: Number(circuitId),
-      muscles: muscleIds
-        ? { create: muscleIds.map((muscleId) => ({ muscleId: Number(muscleId) })) }
-        : undefined,
+      ...data,
+      circuitId: circuit.id,
+      muscles: muscleIds ? { create: muscleIds.map((muscleId) => ({ muscleId })) } : undefined,
     },
     include: INCLUDE,
   });
@@ -91,40 +67,18 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
-  const {
-    exercice,
-    description,
-    consignes,
-    objectif,
-    series,
-    nbRep,
-    duree,
-    tempsDeRepos,
-    tempo,
-    lest,
-    amplitude,
-    url,
-    ordre,
-  } = req.body;
+  const data = parseExercicePatch(req.body);
+  const muscleIds = parseMuscleIds(req.body.muscleIds);
   await findManageableExercice(req.user, req.params.id);
+
+  // muscleIds envoyé : remplace la liste des muscles travaillés.
+  if (muscleIds) {
+    data.muscles = { deleteMany: {}, create: muscleIds.map((muscleId) => ({ muscleId })) };
+  }
 
   const updated = await prisma.exercice.update({
     where: { id: Number(req.params.id) },
-    data: {
-      exercice,
-      description,
-      consignes,
-      objectif,
-      series,
-      nbRep,
-      duree,
-      tempsDeRepos,
-      tempo,
-      lest,
-      amplitude,
-      url,
-      ordre,
-    },
+    data,
     include: INCLUDE,
   });
   res.json(serialize(updated));
@@ -141,24 +95,38 @@ async function remove(req, res) {
 async function grade(req, res) {
   const exerciceId = Number(req.params.id);
   const profilId = Number(req.params.profilId);
-  const { note, commentaire } = req.body;
-  await findManageableExercice(req.user, exerciceId);
+  const { note, commentaire } = validate(schemas.grade, req.body);
+  const circuit = await findManageableExercice(req.user, exerciceId);
+  if (!circuit.personnes.some((p) => p.profilId === profilId)) {
+    throw new HttpError(400, "Ce sportif ne participe pas à cette séance", "NOT_A_PARTICIPANT");
+  }
 
   const noteEntry = await prisma.exerciceNote.upsert({
     where: { exerciceId_profilId: { exerciceId, profilId } },
     update: { note, commentaire },
     create: { exerciceId, profilId, note, commentaire },
   });
+
+  if (profilId !== req.user.id) {
+    const { nom } = await prisma.circuit.findUnique({ where: { id: circuit.id }, select: { nom: true } });
+    await notifyOnce(profilId, { type: "SEANCE_NOTEE", message: `Ton coach a noté ta séance « ${nom} »`, lien: `/seances/${circuit.id}` });
+  }
   res.json(noteEntry);
 }
 
 // GET /api/exercices/catalogue — exercices proposés au coach dans le formulaire :
 // le catalogue de base, plus ceux qu'il a déjà utilisés dans SES séances et
 // SES templates (avec les derniers paramètres saisis, pour pré-remplir).
+// `muscles` : noms des muscles travaillés (ceux de la dernière séance, sinon
+// ceux du catalogue de base).
 async function catalogue(req, res) {
   const fields = { exercice: true, series: true, nbRep: true, duree: true, tempsDeRepos: true, objectif: true, consignes: true };
   const [fromCircuits, fromTemplates] = await Promise.all([
-    prisma.exercice.findMany({ where: { circuit: { auteurId: req.user.id } }, select: fields, orderBy: { id: "desc" } }),
+    prisma.exercice.findMany({
+      where: { circuit: { auteurId: req.user.id } },
+      select: { ...fields, muscles: { select: { muscle: { select: { nom: true } } } } },
+      orderBy: { id: "desc" },
+    }),
     prisma.templateExercice.findMany({ where: { template: { coachId: req.user.id } }, select: fields, orderBy: { id: "desc" } }),
   ]);
 
@@ -169,7 +137,11 @@ async function catalogue(req, res) {
   for (const ex of [...fromCircuits, ...fromTemplates].reverse()) {
     byName.set(ex.exercice.trim().toLowerCase(), { ...ex, exercice: ex.exercice.trim() });
   }
-  res.json([...byName.values()].sort((a, b) => a.exercice.localeCompare(b.exercice, "fr")));
+  const entries = [...byName.values()].map(({ muscles, ...ex }) => ({
+    ...ex,
+    muscles: muscles?.length ? muscles.map((m) => m.muscle.nom) : defaultMuscles(ex.exercice),
+  }));
+  res.json(entries.sort((a, b) => a.exercice.localeCompare(b.exercice, "fr")));
 }
 
 module.exports = { list, getById, create, update, remove, grade, catalogue };

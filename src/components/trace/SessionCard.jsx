@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 import DateBlock from "./DateBlock";
-import { TypeTag, StatusPill } from "./Tags";
+import { Tag, StatusPill } from "../ui/Tags";
 
 // Carte de séance Tracé. Les valeurs (score, statut) sont calculées par
 // SeanceCard, qui choisit le rendu selon le design actif.
@@ -17,7 +17,7 @@ function SessionCard({ circuit, typeLabel, personnes, score, gradedCount, upcomi
   } else if (score === null && personnes.length > 1 && !upcoming) {
     status = <StatusPill tone={gradedCount === personnes.length ? "done" : undefined}>{gradedCount}/{personnes.length} notées</StatusPill>;
   } else if (upcoming) {
-    status = <StatusPill tone="cobalt">À venir</StatusPill>;
+    status = <StatusPill tone="info">À venir</StatusPill>;
   } else {
     status = <StatusPill>Non notée</StatusPill>;
   }
@@ -28,7 +28,7 @@ function SessionCard({ circuit, typeLabel, personnes, score, gradedCount, upcomi
       <div className="st-session-body">
         <div className="st-session-line">
           <h3 className="t-heading truncate">{circuit.nom}</h3>
-          <TypeTag>{typeLabel}</TypeTag>
+          <Tag>{typeLabel}</Tag>
         </div>
         {personnes.length > 0 && (
           <div className="st-meta">

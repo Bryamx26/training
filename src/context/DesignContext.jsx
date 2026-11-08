@@ -7,11 +7,28 @@ const DESIGNS = ["relief", "trace"];
 const DEFAULT_DESIGN = "relief";
 const STORAGE_KEY = "sporttrack.design";
 
-// Polices Google Fonts de chaque design, chargées seulement quand il est actif.
+// Polices de chaque design, hébergées avec l'application (@fontsource) et
+// chargées seulement quand le design est actif. Aucune requête vers Google
+// Fonts : l'adresse IP des visiteurs n'est pas transmise à un tiers.
 const FONTS = {
-  relief: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
-  trace:
-    "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap",
+  relief: () =>
+    Promise.all([
+      import("@fontsource/manrope/latin-400.css"),
+      import("@fontsource/manrope/latin-500.css"),
+      import("@fontsource/manrope/latin-600.css"),
+      import("@fontsource/manrope/latin-700.css"),
+      import("@fontsource/manrope/latin-800.css"),
+    ]),
+  trace: () =>
+    Promise.all([
+      import("@fontsource/archivo/latin-400.css"),
+      import("@fontsource/archivo/latin-500.css"),
+      import("@fontsource/archivo/latin-600.css"),
+      import("@fontsource/archivo/latin-700.css"),
+      import("@fontsource/archivo/latin-800.css"),
+      import("@fontsource/jetbrains-mono/latin-500.css"),
+      import("@fontsource/jetbrains-mono/latin-600.css"),
+    ]),
 };
 
 const DesignContext = createContext({ design: DEFAULT_DESIGN, setDesign: () => {} });
@@ -28,13 +45,8 @@ function readStoredDesign() {
 }
 
 function loadFonts(design) {
-  const id = `${design}-fonts`;
-  if (document.getElementById(id)) return;
-  const link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = FONTS[design];
-  document.head.appendChild(link);
+  // Le navigateur ne télécharge une police que lorsqu'un texte l'utilise.
+  FONTS[design]().catch(() => {});
 }
 
 export function DesignProvider({ children }) {

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LayoutTemplate } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { circuits as circuitsApi, exercices as exercicesApi, me as meApi, templates as templatesApi } from "../lib/api";
+import { circuits as circuitsApi, exercices as exercicesApi, me as meApi, muscles as musclesApi, templates as templatesApi } from "../lib/api";
 import { exerciceDraft, exerciceFromApi, exerciceToApi } from "../lib/exerciceForm";
+import { addDays } from "../lib/seance";
 import TopAppBar from "../components/layout/TopAppBar";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
@@ -34,6 +35,10 @@ function SeanceForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [muscles, setMuscles] = useState([]);
+  // Création uniquement : nombre de semaines (occurrences) si la séance se répète.
+  const [repeter, setRepeter] = useState(false);
+  const [semaines, setSemaines] = useState("4");
   const [appliedTemplate, setAppliedTemplate] = useState(null);
 
   // Pré-remplit le contenu (difficulté, type, exercices) depuis un template.
@@ -52,6 +57,7 @@ function SeanceForm() {
 
   useEffect(() => {
     meApi.subscribers().then(setAbonnes);
+    musclesApi.list().then(setMuscles).catch(() => setMuscles([]));
   }, []);
 
   useEffect(() => {
@@ -98,6 +104,7 @@ function SeanceForm() {
     setSaving(true);
     try {
       const { nom, type, exercices } = contenu;
+      const muscleIdsByName = new Map(muscles.map((m) => [m.nom, m.id]));
       const niveau = contenu.niveau.trim() || undefined;
 
       if (editing) {
@@ -109,7 +116,9 @@ function SeanceForm() {
 
         await Promise.all([
           ...exercices.map((ex, i) =>
-            ex.id ? exercicesApi.update(ex.id, exerciceToApi(ex, i)) : exercicesApi.create({ ...exerciceToApi(ex, i), circuitId: Number(id) })
+            ex.id
+              ? exercicesApi.update(ex.id, exerciceToApi(ex, i, muscleIdsByName))
+              : exercicesApi.create({ ...exerciceToApi(ex, i, muscleIdsByName), circuitId: Number(id) })
           ),
           ...removedIds.map((rid) => exercicesApi.remove(rid)),
         ]);
@@ -122,7 +131,8 @@ function SeanceForm() {
           niveau,
           date,
           participantIds,
-          exercices: exercices.map((ex, i) => exerciceToApi(ex, i)),
+          exercices: exercices.map((ex, i) => exerciceToApi(ex, i, muscleIdsByName)),
+          repetition: repeter ? { semaines: Number(semaines) } : undefined,
         });
         navigate(`/seances/${created.id}`, { replace: true });
       }
@@ -160,7 +170,43 @@ function SeanceForm() {
         <SeanceContentFields
           value={contenu}
           onChange={setContenu}
-          afterMeta={<Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />}
+          muscles={muscles}
+          afterMeta={
+            <>
+              <Input label={repeter ? "Première séance" : "Date"} type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              {!editing && (
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 card-surface px-4 py-3">
+                    <input type="checkbox" checked={repeter} onChange={(e) => setRepeter(e.target.checked)} className="w-4 h-4" />
+                    <span className="text-sm font-semibold flex-1">Répéter chaque semaine</span>
+                  </label>
+                  {repeter && (
+                    <Input
+                      label="Nombre de séances"
+                      type="number"
+                      min="2"
+                      max="52"
+                      inputMode="numeric"
+                      value={semaines}
+                      onChange={(e) => setSemaines(e.target.value)}
+                      required
+                    />
+                  )}
+                  {repeter && date && Number(semaines) > 1 && (
+                    <p className="text-caption text-muted-foreground" role="status">
+                      {semaines} séances, chaque{" "}
+                      {new Date(`${date}T00:00`).toLocaleDateString("fr-FR", { weekday: "long" })}, jusqu'au{" "}
+                      {addDays(new Date(`${date}T00:00`), (Number(semaines) - 1) * 7).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                      })}
+                      .
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          }
         />
 
         <div>
@@ -186,7 +232,13 @@ function SeanceForm() {
         {error && <p className="text-caption text-center text-destructive">{error}</p>}
 
         <Button type="submit" disabled={saving}>
-          {saving ? "Enregistrement..." : editing ? "Enregistrer les modifications" : "Créer la séance"}
+          {saving
+            ? "Enregistrement..."
+            : editing
+              ? "Enregistrer les modifications"
+              : repeter && Number(semaines) > 1
+                ? `Créer les ${semaines} séances`
+                : "Créer la séance"}
         </Button>
       </form>
 

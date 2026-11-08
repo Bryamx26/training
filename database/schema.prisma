@@ -42,6 +42,12 @@ model Profil {
   age          Int?
   blessures    String?
   role         Role     @default(USER)
+  // Inscription publique en tant que coach : le compte reste sportif (USER)
+  // tant qu'un admin n'a pas validé la demande.
+  demandeCoach Boolean  @default(false)
+  // Date d'acceptation des CGU et de la politique de confidentialité (preuve
+  // du consentement, RGPD art. 7). Null : compte créé par un coach ou un admin.
+  cguAccepteesLe DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -54,6 +60,8 @@ model Profil {
   coachsSuivis   CoachSubscription[] @relation("SportifCoachs")
 
   templates      CircuitTemplate[]
+  notifications  Notification[]
+  realisations   Realisation[]
 
   @@map("profils")
 }
@@ -70,8 +78,9 @@ model Circuit {
   auteurId Int
   auteur   Profil @relation("CircuitAuteur", fields: [auteurId], references: [id], onDelete: Cascade)
 
-  personnes CircuitParticipant[]
-  exercices Exercice[]
+  personnes    CircuitParticipant[]
+  exercices    Exercice[]
+  realisations Realisation[]
 
   @@map("circuits")
 }
@@ -125,8 +134,9 @@ model Exercice {
   circuitId Int
   circuit   Circuit @relation(fields: [circuitId], references: [id], onDelete: Cascade)
 
-  muscles ExerciceMuscle[]
-  notes   ExerciceNote[]
+  muscles         ExerciceMuscle[]
+  notes           ExerciceNote[]
+  seriesRealisees SerieRealisee[]
 
   @@map("exercices")
 }
@@ -211,4 +221,58 @@ model ExerciceMuscle {
 
   @@unique([exerciceId, muscleId])
   @@map("exercice_muscles")
+}
+
+// Notification affichée dans l'application (cloche de l'accueil).
+// `lien` est une route du front (ex. "/seances/12").
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  message   String
+  lien      String?
+  lu        Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  profilId Int
+  profil   Profil @relation(fields: [profilId], references: [id], onDelete: Cascade)
+
+  @@index([profilId, lu])
+  @@map("notifications")
+}
+
+// Ce que le sportif a RÉELLEMENT fait lors d'une séance (saisi dans le lecteur) :
+// détail de chaque série. Seul le coach note une séance. Une seule réalisation
+// par participant et par séance : la relancer remplace la précédente.
+model Realisation {
+  id          Int      @id @default(autoincrement())
+  commentaire String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  circuitId Int
+  circuit   Circuit @relation(fields: [circuitId], references: [id], onDelete: Cascade)
+  profilId  Int
+  profil    Profil  @relation(fields: [profilId], references: [id], onDelete: Cascade)
+
+  series SerieRealisee[]
+
+  @@unique([circuitId, profilId])
+  @@index([profilId])
+  @@map("realisations")
+}
+
+model SerieRealisee {
+  id    Int    @id @default(autoincrement())
+  serie Int
+  reps  Int?
+  lest  Float?
+  duree Int?
+
+  realisationId Int
+  realisation   Realisation @relation(fields: [realisationId], references: [id], onDelete: Cascade)
+  exerciceId    Int
+  exercice      Exercice    @relation(fields: [exerciceId], references: [id], onDelete: Cascade)
+
+  @@index([exerciceId])
+  @@map("series_realisees")
 }

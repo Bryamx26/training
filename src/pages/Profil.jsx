@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LogOut, Users as UsersIcon, Plus, ChevronRight, LayoutTemplate, UserSearch } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useDesign } from "../context/DesignContext";
@@ -10,12 +10,13 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import DarkModeToggle from "../components/bouton/DarkModeToggle.jsx";
 import DesignPicker from "../components/bouton/DesignPicker.jsx";
-import TraceKpiTile from "../components/trace/KpiTile";
-import ReliefKpiTile from "../components/relief/KpiTile";
+import KpiTile from "../components/ui/KpiTile";
 import MenuRow from "../components/relief/MenuRow";
-import { StatusPill } from "../components/relief/Tags";
+import { StatusPill } from "../components/ui/Tags";
 import SocialDrawer from "../components/social/SocialDrawer";
 import { computeScoreForProfil } from "../lib/score";
+import LegalMenu from "../components/legal/LegalMenu";
+import DeleteAccountSheet from "../components/legal/DeleteAccountSheet";
 
 function Profil() {
   const { user, updateUser, logout, isAdmin } = useAuth();
@@ -26,6 +27,7 @@ function Profil() {
   const [stats, setStats] = useState(null);
   // Social : recherche de coachs (sportif) ou liste des abonnés (coach).
   const [socialOpen, setSocialOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -59,7 +61,12 @@ function Profil() {
 
   const roleLabel = user.role === "ADMIN" ? "Entraîneur" : user.role === "COACH" ? "Coach" : "Sportif";
 
-  const socialDrawer = socialOpen && <SocialDrawer onClose={() => setSocialOpen(false)} />;
+  const socialDrawer = (
+    <>
+      {socialOpen && <SocialDrawer onClose={() => setSocialOpen(false)} />}
+      {deleteOpen && <DeleteAccountSheet onClose={() => setDeleteOpen(false)} />}
+    </>
+  );
 
   const infoForm = !isAdmin && (
     <form onSubmit={handleSave} className="flex flex-col gap-4">
@@ -70,6 +77,13 @@ function Profil() {
         <Input label="Taille (cm)" type="number" value={form.taille} onChange={(e) => setForm({ ...form, taille: e.target.value })} />
       </div>
       <Input label="Blessures / objectifs" value={form.blessures} onChange={(e) => setForm({ ...form, blessures: e.target.value })} />
+      <p className="text-caption text-muted-foreground">
+        Facultatif. Ces informations de santé ne servent qu'à adapter tes séances et ne sont visibles que par tes coachs et les
+        administrateurs. En les enregistrant, tu consens à leur traitement ; vide les champs pour retirer ton consentement.{" "}
+        <Link to="/legal/confidentialite" className="underline">
+          En savoir plus
+        </Link>
+      </p>
       <Button type="submit" variant="secondary" disabled={saving}>
         {saving ? "Enregistrement..." : "Enregistrer"}
       </Button>
@@ -97,6 +111,7 @@ function Profil() {
               >
                 {roleLabel}
               </span>
+              {user.demandeCoach && <span className="t-label" style={{ color: "var(--on-slab-muted)" }}>Demande coach en attente</span>}
             </div>
           </div>
 
@@ -107,8 +122,8 @@ function Profil() {
 
           {!isAdmin && stats && (
             <div className="grid grid-cols-2 gap-3">
-              <TraceKpiTile label="Séances" value={stats.total} />
-              <TraceKpiTile label="Moyenne" value={stats.moyenne.toFixed(1)} sub="sur 10" />
+              <KpiTile label="Séances" value={stats.total} />
+              <KpiTile label="Moyenne" value={stats.moyenne.toFixed(1)} sub="sur 10" />
             </div>
           )}
 
@@ -141,6 +156,8 @@ function Profil() {
 
           {infoForm}
 
+          <LegalMenu onDeleteAccount={() => setDeleteOpen(true)} />
+
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="w-4 h-4" /> Déconnexion
           </Button>
@@ -168,6 +185,7 @@ function Profil() {
             <StatusPill>
               <span className="uppercase tracking-[0.08em] text-[11px]">{roleLabel}</span>
             </StatusPill>
+            {user.demandeCoach && <StatusPill tone="info">Demande coach en attente</StatusPill>}
           </div>
         </div>
 
@@ -178,8 +196,8 @@ function Profil() {
 
         {!isAdmin && stats && (
           <div className="grid grid-cols-2 gap-4">
-            <ReliefKpiTile label="Séances" value={stats.total} />
-            <ReliefKpiTile label="Moyenne" value={stats.moyenne.toFixed(1)} sub="sur 10" tone="progress" />
+            <KpiTile label="Séances" value={stats.total} />
+            <KpiTile label="Moyenne" value={stats.moyenne.toFixed(1)} sub="sur 10" />
           </div>
         )}
 
@@ -195,6 +213,8 @@ function Profil() {
         </div>
 
         {infoForm}
+
+        <LegalMenu onDeleteAccount={() => setDeleteOpen(true)} />
 
         <Button variant="danger-soft" onClick={handleLogout}>
           <LogOut className="w-4 h-4" /> Déconnexion

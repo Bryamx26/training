@@ -1,6 +1,5 @@
 import { useDesign } from "../../context/DesignContext";
-import TraceSegmentedControl from "../trace/SegmentedControl";
-import ReliefSegmentedControl from "../relief/SegmentedControl";
+import SegmentedControl from "../ui/SegmentedControl";
 
 // Vignettes d'aperçu 48×32 de chaque design (couleurs fixes : elles montrent
 // l'autre design quel que soit celui qui est actif).
@@ -41,17 +40,8 @@ const LABEL = "Design de l'application";
 function DesignPicker() {
   const { design, setDesign } = useDesign();
 
-  if (design === "trace") {
-    return <TraceSegmentedControl options={OPTIONS} value={design} onChange={setDesign} label={LABEL} />;
-  }
-
   return (
-    <ReliefSegmentedControl
-      options={OPTIONS.map((opt) => ({ ...opt, icon: opt.thumb }))}
-      value={design}
-      onChange={setDesign}
-      label={LABEL}
-    />
+    <SegmentedControl options={OPTIONS.map((opt) => ({ ...opt, icon: opt.thumb }))} value={design} onChange={setDesign} label={LABEL} />
   );
 }
 

@@ -9,8 +9,8 @@ import MoyenneDiv from "../components/container/MoyenneDiv.jsx";
 import IndividualStats from "../components/progressions/IndividualStats.jsx";
 import { Loading, EmptyState } from "../components/ui/States";
 import { computeScoreForProfil } from "../lib/score";
-import TraceSegmentedControl from "../components/trace/SegmentedControl";
-import ReliefSegmentedControl from "../components/relief/SegmentedControl";
+import { scoreTrend } from "../lib/trend";
+import SegmentedControl from "../components/ui/SegmentedControl";
 
 // Un coach peut aussi participer à ses séances : il bascule entre les
 // statistiques de ses sportifs et les siennes.
@@ -38,14 +38,21 @@ function StatsAdmin() {
     Promise.all(
       sportifs.map((s) =>
         circuitsApi.list({ profilId: s.id }).then((circuits) => {
-          const gradees = circuits.map((c) => computeScoreForProfil(c.exercices, s.id)).filter((s2) => s2.graded);
+          // Séances notées, de la plus ancienne à la plus récente (l'API les
+          // renvoie de la plus récente à la plus ancienne).
+          const gradees = circuits
+            .map((c) => ({ date: c.date, ...computeScoreForProfil(c.exercices, s.id) }))
+            .filter((g) => g.graded)
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
           const moyenne = gradees.length ? gradees.reduce((sum, g) => sum + g.percentage, 0) / gradees.length : 0;
+          // Mini-courbe : les 5 séances notées les plus récentes, dans l'ordre chronologique.
           const notes = gradees.slice(-5).map((g) => g.moyenne10);
           return {
             ...s,
             name: `${s.prenom} ${s.nom}`,
             progress: Math.round(moyenne),
             notes,
+            points: gradees.map((g) => ({ date: g.date, percentage: g.percentage })),
             moyenne10: gradees.length ? gradees.reduce((sum, g) => sum + g.moyenne10, 0) / gradees.length : 0,
           };
         })
@@ -60,7 +67,8 @@ function StatsAdmin() {
 
   return (
     <div className="flex flex-col gap-4">
-      <MoyenneDiv users={rows} text="moyenne" />
+      {/* Tendance du groupe : toutes les séances notées de tous les sportifs. */}
+      <MoyenneDiv users={rows} text="moyenne" trend={scoreTrend(rows.flatMap((r) => r.points))} />
       {trace ? <span className="t-label mt-2 -mb-2">Par sportif</span> : <span className="rl-label mt-3 -mb-1">Par sportif</span>}
       <div className={trace ? "st-list" : "flex flex-col gap-4"}>
         {rows.map((r) => (
@@ -81,9 +89,7 @@ function StatsAdmin() {
 
 function Stats() {
   const { user, isAdmin } = useAuth();
-  const { design } = useDesign();
   const [vue, setVue] = useState("sportifs");
-  const SegmentedControl = design === "trace" ? TraceSegmentedControl : ReliefSegmentedControl;
 
   return (
     <div>

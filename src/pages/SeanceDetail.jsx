@@ -10,14 +10,15 @@ import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
 import { Loading, ErrorState } from "../components/ui/States";
 import { computeScoreForProfil, noteForProfil } from "../lib/score";
+import { typeLabel as typeLabelOf } from "../lib/seance";
 import ScorePanel from "../components/trace/ScorePanel";
-import { TypeTag } from "../components/trace/Tags";
-import { Tag } from "../components/relief/Tags";
+import { Tag } from "../components/ui/Tags";
 import ScoreRing from "../components/relief/ScoreRing";
-import SegmentedControl from "../components/relief/SegmentedControl";
+import SegmentedControl from "../components/ui/SegmentedControl";
 import SaveTemplateSheet from "../components/templates/SaveTemplateSheet";
+import RealisationSummary from "../components/seances/RealisationSummary";
+import { unlockAudio } from "../lib/feedback";
 
-const TYPE_LABEL = { FORCE: "Force", ENDURANCE: "Endurance", HYPERTROPHIE: "Hypertrophie", FIGURE: "Figure" };
 
 function SeanceDetail() {
   const { id } = useParams();
@@ -59,13 +60,14 @@ function SeanceDetail() {
   if (!circuit) return <Loading />;
 
   const score = computeScoreForProfil(circuit.exercices, selectedProfilId);
-  const typeLabel = TYPE_LABEL[circuit.type] ?? circuit.type;
+  const typeLabel = typeLabelOf(circuit.type);
   const dateLabel = new Date(circuit.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   const selected = circuit.personnes?.find((p) => p.profilId === selectedProfilId);
   const nbExercices = circuit.exercices.length;
   // Un coach peut participer à ses propres séances : il se note et la lance comme un sportif.
   const participe = circuit.personnes?.some((p) => p.profilId === user.id);
   const prenomAffiche = (p) => (p.profilId === user.id ? "Moi" : p.profil.prenom);
+  const realisation = circuit.realisations?.find((r) => r.profilId === selectedProfilId);
 
   return (
     <div>
@@ -98,8 +100,8 @@ function SeanceDetail() {
       <div className="px-5 flex flex-col gap-5 pb-8">
         {trace ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <TypeTag>{typeLabel}</TypeTag>
-            {circuit.niveau && <TypeTag>{circuit.niveau}</TypeTag>}
+            <Tag>{typeLabel}</Tag>
+            {circuit.niveau && <Tag>{circuit.niveau}</Tag>}
             <span className="st-meta">
               <Calendar />
               <span className="t-mono">{new Date(circuit.date).toLocaleDateString("fr-FR")}</span>
@@ -170,7 +172,11 @@ function SeanceDetail() {
 
         {(!isAdmin || participe) && circuit.exercices.length > 0 && (
           <Button
-            onClick={() => navigate(`/seances/${id}/lancer`)}
+            onClick={() => {
+              // Le son du lecteur doit être autorisé par un geste de l'utilisateur.
+              unlockAudio();
+              navigate(`/seances/${id}/lancer`);
+            }}
             className="w-full"
             size="lg"
             trailing={`${nbExercices} exercice${nbExercices > 1 ? "s" : ""}`}
@@ -186,6 +192,14 @@ function SeanceDetail() {
             total={score.total}
             max={score.max}
             moyenne10={score.moyenne10}
+          />
+        )}
+
+        {realisation && (
+          <RealisationSummary
+            realisation={realisation}
+            exercices={circuit.exercices}
+            titre={isAdmin && selected && selected.profilId !== user.id ? `Réalisé par ${selected.profil.prenom}` : "Ce que j'ai réalisé"}
           />
         )}
 

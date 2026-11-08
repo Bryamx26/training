@@ -21,9 +21,15 @@ function newKey() {
   return `ex-${nextKey}`;
 }
 
+// Noms des muscles travaillés, quelle que soit la forme reçue : noms (catalogue),
+// { nom } (exercice seul) ou { muscle: { nom } } (exercice d'une séance).
+function muscleNames(muscles = []) {
+  return muscles.map((m) => (typeof m === "string" ? m : (m.muscle?.nom ?? m.nom))).filter(Boolean);
+}
+
 // Nouvel exercice, éventuellement pré-rempli (entrée du catalogue, exercice d'un template…).
 export function exerciceDraft(source = {}) {
-  const draft = { key: newKey(), exercice: source.exercice ?? "" };
+  const draft = { key: newKey(), exercice: source.exercice ?? "", muscles: muscleNames(source.muscles) };
   for (const field of PARAMS) draft[field] = source[field] ?? "";
   // État d'interface (non envoyé à l'API) : le champ de lest est affiché.
   draft.avecLest = draft.lest !== "";
@@ -35,9 +41,13 @@ export function exerciceFromApi(ex) {
   return { ...exerciceDraft(ex), id: ex.id };
 }
 
-export function exerciceToApi(ex, ordre) {
+// `muscleIdsByName` (Map nom -> id) : envoie aussi les muscles travaillés
+// (séances uniquement ; les templates ne les stockent pas).
+export function exerciceToApi(ex, ordre, muscleIdsByName) {
   const num = (v) => (v === "" || v === null || v === undefined ? undefined : Number(v));
+  const muscleIds = muscleIdsByName ? ex.muscles.map((nom) => muscleIdsByName.get(nom)).filter(Boolean) : undefined;
   return {
+    muscleIds,
     exercice: ex.exercice.trim(),
     description: ex.description || undefined,
     consignes: ex.consignes || undefined,

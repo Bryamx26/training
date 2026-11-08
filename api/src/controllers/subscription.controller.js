@@ -3,6 +3,7 @@ const HttpError = require("../lib/httpError");
 const { PUBLIC_FIELDS, COACH_FIELDS } = require("../lib/profilFields");
 const { isStaff, isAthlete } = require("../lib/permissions");
 const { activateSubscription } = require("../lib/subscriptions");
+const { notify } = require("../lib/notifications");
 
 const COACH_ROLES = ["COACH", "ADMIN"];
 const SEARCH_LIMIT = 20;
@@ -64,6 +65,12 @@ async function subscribe(req, res) {
   if (existing?.status === "ACTIVE") throw new HttpError(409, "Tu es déjà abonné à ce coach", "ALREADY_SUBSCRIBED");
 
   const subscription = await activateSubscription(coach.id, req.user.id);
+  const athlete = await prisma.profil.findUnique({ where: { id: req.user.id }, select: { prenom: true, nom: true } });
+  await notify([coach.id], {
+    type: "NOUVEL_ABONNE",
+    message: `${athlete.prenom} ${athlete.nom} s'est abonné à toi`,
+    lien: `/admin/sportifs/${req.user.id}`,
+  });
   res.status(existing ? 200 : 201).json(serializeSubscription(subscription));
 }
 

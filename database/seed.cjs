@@ -121,8 +121,45 @@ async function seedDemoSubscription(admin, sportif) {
   console.log("✔ Abonnement de démo (Lea -> Coach)");
 }
 
+// Compte administrateur défini par ADMIN_EMAIL / ADMIN_PASSWORD (dev et prod).
+// - Le compte existe déjà : il est promu ADMIN (sa demande coach en attente est
+//   close). Son mot de passe n'est jamais modifié, ADMIN_PASSWORD est ignoré.
+// - Il n'existe pas : il est créé avec ADMIN_PASSWORD (8 caractères minimum).
+// Le mot de passe changé depuis l'app n'est donc pas écrasé au redémarrage :
+// une fois le compte créé, ADMIN_PASSWORD peut être retiré du .env.
+async function seedAdmin() {
+  const mail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!mail) {
+    const hasAdmin = await prisma.profil.count({ where: { role: "ADMIN" } });
+    if (!hasAdmin) console.warn("⚠ Aucun compte admin : définis ADMIN_EMAIL (et ADMIN_PASSWORD) dans .env");
+    return;
+  }
+
+  const existing = await prisma.profil.findUnique({ where: { mail } });
+  if (existing) {
+    if (existing.role !== "ADMIN") {
+      await prisma.profil.update({ where: { id: existing.id }, data: { role: "ADMIN", demandeCoach: false } });
+      console.log(`✔ Compte ${mail} promu ADMIN`);
+    }
+    return;
+  }
+
+  const motDePasse = process.env.ADMIN_PASSWORD ?? "";
+  if (motDePasse.length < 8) {
+    console.warn(`⚠ Admin ${mail} non créé : ADMIN_PASSWORD doit faire 8 caractères minimum`);
+    return;
+  }
+  await prisma.profil.create({
+    data: { nom: "Admin", prenom: "Admin", mail, role: "ADMIN", motDePasse: await bcrypt.hash(motDePasse, 10) },
+  });
+  console.log(`✔ Compte admin ${mail} créé`);
+}
+
 async function main() {
   await seedMuscles();
+  await seedAdmin();
+  // Pas de comptes de test (mots de passe connus) sur une base de production.
+  if (process.env.NODE_ENV === "production") return;
   const { admin, sportif } = await seedTestUsers();
   await seedDemoSubscription(admin, sportif);
   await seedDemoCircuit(admin, sportif);

@@ -1,16 +1,23 @@
 const prisma = require("../lib/prisma");
 const HttpError = require("../lib/httpError");
-const { verifyToken } = require("../lib/token");
+const { verifyToken, COOKIE_NAME } = require("../lib/token");
 const { isStaff, isAdmin } = require("../lib/permissions");
 
-// Lit le jeton « Authorization: Bearer <jeton> » et charge l'utilisateur
-// correspondant. Renvoie null s'il n'y a pas de jeton ; lance une 401 si le
-// jeton est invalide ou si le compte n'existe plus.
-async function loadUser(req) {
+// Jeton de la requête : cookie de session (navigateur) ou en-tête
+// « Authorization: Bearer <jeton> » (clients d'API, tests).
+function readToken(req) {
   const header = req.headers.authorization ?? "";
-  if (!header.startsWith("Bearer ")) return null;
+  if (header.startsWith("Bearer ")) return header.slice("Bearer ".length);
+  return req.cookies?.[COOKIE_NAME] ?? null;
+}
 
-  const profilId = verifyToken(header.slice("Bearer ".length));
+// Charge l'utilisateur du jeton. Renvoie null s'il n'y a pas de jeton ; lance
+// une 401 si le jeton est invalide ou si le compte n'existe plus.
+async function loadUser(req) {
+  const token = readToken(req);
+  if (!token) return null;
+
+  const profilId = verifyToken(token);
   const user = profilId
     ? await prisma.profil.findUnique({ where: { id: profilId }, select: { id: true, role: true } })
     : null;
@@ -30,13 +37,16 @@ async function requireAuth(req, res, next) {
 }
 
 // Route ouverte à tous, mais qui a besoin de savoir qui appelle s'il est connecté.
+// Une session expirée vaut ici une visite anonyme (ex. inscription depuis un
+// navigateur qui garde un vieux cookie).
 async function optionalAuth(req, res, next) {
   try {
     req.user = await loadUser(req);
-    next();
   } catch (err) {
-    next(err);
+    if (!(err instanceof HttpError) || err.status !== 401) return next(err);
+    req.user = null;
   }
+  next();
 }
 
 // À placer après requireAuth : réserve la route aux coachs et admins.

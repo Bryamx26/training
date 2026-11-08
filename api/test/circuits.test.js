@@ -1,0 +1,242 @@
+const { describe, it, before, after } = require("node:test");
+const assert = require("node:assert/strict");
+const { start, stop, createUser, api, createCircuit, prisma } = require("./helpers");
+
+before(start);
+after(stop);
+
+// Coach + sportif abonné.
+async function coachAndAthlete() {
+  const coach = await createUser("COACH");
+  const athlete = await createUser("USER");
+  await prisma.coachSubscription.create({ data: { coachId: coach.id, athleteId: athlete.id } });
+  return { coach, athlete };
+}
+
+const notificationsOf = (user) => api("GET", "/me/notifications", { token: user.token });
+
+describe("création et validation des séances", () => {
+  it("valide le corps d'une séance", async () => {
+    const coach = await createUser("COACH");
+    const invalides = [
+      { type: "FORCE", date: "2026-10-10" },
+      { nom: "S", type: "YOGA", date: "2026-10-10" },
+      { nom: "S", type: "FORCE", date: "pas une date" },
+      { nom: "S", type: "FORCE", date: "2026-10-10", note: 12 },
+      { nom: "S", type: "FORCE", date: "2026-10-10", exercices: [{ exercice: "" }] },
+      { nom: "S", type: "FORCE", date: "2026-10-10", repetition: { semaines: 0 } },
+    ];
+    for (const body of invalides) {
+      const res = await api("POST", "/circuits", { token: coach.token, body });
+      assert.equal(res.status, 400, JSON.stringify(body));
+      assert.equal(res.body.code, "VALIDATION_ERROR");
+    }
+  });
+
+  it("une séance récurrente crée une occurrence par semaine", async () => {
+    const { coach, athlete } = await coachAndAthlete();
+    const res = await api("POST", "/circuits", {
+      token: coach.token,
+      body: { nom: "Hebdo", type: "FORCE", date: "2026-11-02", participantIds: [athlete.id], repetition: { semaines: 4 }, exercices: [{ exercice: "Squat", series: 3 }] },
+    });
+    assert.equal(res.status, 201);
+    assert.equal(res.body.occurrenceIds.length, 4);
+
+    const occurrences = await prisma.circuit.findMany({
+      where: { id: { in: res.body.occurrenceIds } },
+      include: { exercices: true, personnes: true },
+      orderBy: { date: "asc" },
+    });
+    assert.deepEqual(
+      occurrences.map((c) => c.date.toISOString().slice(0, 10)),
+      ["2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23"]
+    );
+    assert.ok(occurrences.every((c) => c.exercices.length === 1 && c.personnes[0].profilId === athlete.id));
+
+    // Une seule notification regroupée pour le sportif.
+    const notifs = (await notificationsOf(athlete)).body;
+    assert.equal(notifs.nonLues, 1);
+    assert.match(notifs.notifications[0].message, /4 nouvelles séances/);
+  });
+
+  it("filtre les séances par période", async () => {
+    const coach = await createUser("COACH");
+    for (const date of ["2026-01-05", "2026-01-11", "2026-01-12"]) {
+      await prisma.circuit.create({ data: { nom: date, type: "FORCE", date: new Date(date), auteurId: coach.id } });
+    }
+    const res = await api("GET", "/circuits?from=2026-01-05&to=2026-01-11", { token: coach.token });
+    assert.deepEqual(res.body.map((c) => c.nom).sort(), ["2026-01-05", "2026-01-11"]);
+  });
+
+  it("enregistre les muscles travaillés d'un exercice", async () => {
+    const coach = await createUser("COACH");
+    const [dos, biceps] = await Promise.all(["Dos", "Biceps"].map((nom) => prisma.muscle.upsert({ where: { nom }, update: {}, create: { nom } })));
+    const res = await api("POST", "/circuits", {
+      token: coach.token,
+      body: { nom: "Tirage", type: "FORCE", date: "2026-10-10", exercices: [{ exercice: "Tractions", muscleIds: [dos.id, biceps.id] }] },
+    });
+    assert.equal(res.status, 201);
+    assert.deepEqual(res.body.exercices[0].muscles.map((m) => m.muscle.nom).sort(), ["Biceps", "Dos"]);
+
+    const exId = res.body.exercices[0].id;
+    const updated = await api("PUT", `/exercices/${exId}`, { token: coach.token, body: { muscleIds: [dos.id] } });
+    assert.equal(updated.status, 200);
+    assert.deepEqual(updated.body.muscles.map((m) => m.nom), ["Dos"]);
+    assert.equal(updated.body.exercice, "Tractions", "une modification partielle garde les autres champs");
+  });
+});
+
+describe("notes et notifications", () => {
+  it("noter un sportif le prévient une seule fois tant qu'il n'a pas lu", async () => {
+    const { coach, athlete } = await coachAndAthlete();
+    const created = await api("POST", "/circuits", {
+      token: coach.token,
+      body: { nom: "Notée", type: "FORCE", date: "2026-10-10", participantIds: [athlete.id], exercices: [{ exercice: "Squat" }, { exercice: "Pompes" }] },
+    });
+    await api("POST", "/me/notifications/read", { token: athlete.token, body: {} });
+
+    for (const ex of created.body.exercices) {
+      const res = await api("PUT", `/exercices/${ex.id}/notes/${athlete.id}`, { token: coach.token, body: { note: 7 } });
+      assert.equal(res.status, 200);
+    }
+    const notifs = (await notificationsOf(athlete)).body;
+    assert.equal(notifs.nonLues, 1);
+    assert.equal(notifs.notifications[0].type, "SEANCE_NOTEE");
+    assert.equal(notifs.notifications[0].lien, `/seances/${created.body.id}`);
+
+    // Marquer comme lu ne touche que ses propres notifications.
+    const coachNotif = await prisma.notification.create({ data: { profilId: coach.id, type: "T", message: "m" } });
+    await api("POST", "/me/notifications/read", { token: athlete.token, body: { ids: [coachNotif.id] } });
+    assert.equal((await prisma.notification.findUnique({ where: { id: coachNotif.id } })).lu, false);
+    await api("POST", "/me/notifications/read", { token: athlete.token, body: {} });
+    assert.equal((await notificationsOf(athlete)).body.nonLues, 0);
+  });
+
+  it("refuse une note hors limites ou pour un non-participant", async () => {
+    const { coach, athlete } = await coachAndAthlete();
+    const created = await api("POST", "/circuits", {
+      token: coach.token,
+      body: { nom: "S", type: "FORCE", date: "2026-10-10", exercices: [{ exercice: "Squat" }] },
+    });
+    const exId = created.body.exercices[0].id;
+    assert.equal((await api("PUT", `/exercices/${exId}/notes/${athlete.id}`, { token: coach.token, body: { note: 7 } })).status, 400);
+    await api("PUT", `/circuits/${created.body.id}/participants`, { token: coach.token, body: { participantIds: [athlete.id] } });
+    assert.equal((await api("PUT", `/exercices/${exId}/notes/${athlete.id}`, { token: coach.token, body: { note: 11 } })).status, 400);
+  });
+
+  it("un abonnement prévient le coach", async () => {
+    const coach = await createUser("COACH");
+    const athlete = await createUser("USER", "Nina");
+    await api("POST", `/coaches/${coach.id}/subscribe`, { token: athlete.token });
+    const notifs = (await notificationsOf(coach)).body;
+    assert.equal(notifs.notifications[0].type, "NOUVEL_ABONNE");
+    assert.match(notifs.notifications[0].message, /Nina/);
+  });
+});
+
+describe("réalisation d'une séance", () => {
+  async function setup() {
+    const { coach, athlete } = await coachAndAthlete();
+    const other = await createUser("USER");
+    await prisma.coachSubscription.create({ data: { coachId: coach.id, athleteId: other.id } });
+    const created = await api("POST", "/circuits", {
+      token: coach.token,
+      body: {
+        nom: "Force",
+        type: "FORCE",
+        date: new Date().toISOString().slice(0, 10),
+        participantIds: [athlete.id, other.id],
+        exercices: [
+          { exercice: "Squat", series: 2, nbRep: 10, lest: 40 },
+          { exercice: "Gainage", duree: 30 },
+        ],
+      },
+    });
+    const [squat, gainage] = created.body.exercices;
+    return { coach, athlete, other, circuit: created.body, squat, gainage };
+  }
+
+  it("le participant enregistre ses séries ; le coach est prévenu", async () => {
+    const { coach, athlete, other, circuit, squat, gainage } = await setup();
+    const body = {
+      series: [
+        { exerciceId: squat.id, serie: 1, reps: 10, lest: 40 },
+        { exerciceId: squat.id, serie: 2, reps: 8, lest: 45 },
+        { exerciceId: gainage.id, serie: 1, duree: 30 },
+      ],
+    };
+    const res = await api("PUT", `/circuits/${circuit.id}/realisation`, { token: athlete.token, body });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.series.length, 3);
+
+    // Relancer remplace la saisie, sans doublon ni nouvelle notification.
+    const again = await api("PUT", `/circuits/${circuit.id}/realisation`, { token: athlete.token, body: { ...body, series: body.series.slice(0, 2) } });
+    assert.equal(again.body.series.length, 2);
+    assert.equal(await prisma.serieRealisee.count({ where: { realisation: { circuitId: circuit.id } } }), 2);
+    const coachNotifs = (await notificationsOf(coach)).body.notifications.filter((n) => n.type === "SEANCE_REALISEE");
+    assert.equal(coachNotifs.length, 1);
+
+    // Le coach voit toutes les réalisations, un sportif seulement la sienne.
+    await api("PUT", `/circuits/${circuit.id}/realisation`, { token: other.token, body: { series: [] } });
+    assert.equal((await api("GET", `/circuits/${circuit.id}`, { token: coach.token })).body.realisations.length, 2);
+    const seen = (await api("GET", `/circuits/${circuit.id}`, { token: athlete.token })).body.realisations;
+    assert.deepEqual(seen.map((r) => r.profilId), [athlete.id]);
+  });
+
+  it("un participant ne peut pas noter la séance", async () => {
+    const { athlete, circuit, squat } = await setup();
+    const res = await api("PUT", `/exercices/${squat.id}/notes/${athlete.id}`, { token: athlete.token, body: { note: 10 } });
+    assert.equal(res.status, 403);
+    // Une ancienne version du lecteur envoyait un ressenti : il est ignoré.
+    const saved = await api("PUT", `/circuits/${circuit.id}/realisation`, { token: athlete.token, body: { rpe: 9, series: [] } });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.rpe, undefined);
+  });
+
+  it("refuse un non-participant ou un exercice d'une autre séance", async () => {
+    const { coach, athlete, circuit, squat } = await setup();
+    const outsider = await createUser("USER");
+    const byOutsider = await api("PUT", `/circuits/${circuit.id}/realisation`, { token: outsider.token, body: { series: [] } });
+    assert.equal(byOutsider.status, 403);
+    assert.equal(byOutsider.body.code, "NOT_A_PARTICIPANT");
+
+    const otherCircuit = await createCircuit(coach, [athlete.id]);
+    const otherEx = await prisma.exercice.create({ data: { exercice: "X", circuitId: otherCircuit.id } });
+    const foreign = await api("PUT", `/circuits/${circuit.id}/realisation`, {
+      token: athlete.token,
+      body: { series: [{ exerciceId: otherEx.id, serie: 1 }] },
+    });
+    assert.equal(foreign.status, 400);
+    assert.ok(squat);
+  });
+
+  it("statistiques : volume par muscle et progression par exercice", async () => {
+    const { coach, athlete, other, circuit, squat } = await setup();
+    for (const nom of ["Quadriceps", "Fessiers", "Abdominaux"]) await prisma.muscle.upsert({ where: { nom }, update: {}, create: { nom } });
+    await api("PUT", `/circuits/${circuit.id}/realisation`, {
+      token: athlete.token,
+      body: { series: [{ exerciceId: squat.id, serie: 1, reps: 10, lest: 40 }, { exerciceId: squat.id, serie: 2, reps: 8, lest: 50 }] },
+    });
+
+    const muscles = await api("GET", `/stats/muscles?profilId=${athlete.id}`, { token: coach.token });
+    assert.equal(muscles.status, 200);
+    const quadri = muscles.body.muscles.find((m) => m.nom === "Quadriceps");
+    assert.equal(quadri.series, 2, "séries réalisées");
+    assert.equal(quadri.volume, 10 * 40 + 8 * 50);
+    assert.equal(muscles.body.muscles.find((m) => m.nom === "Abdominaux").series, 0, "gainage non réalisé");
+
+    // Sans saisie, les séries prévues d'une séance passée comptent.
+    const planned = (await api("GET", "/stats/muscles", { token: other.token })).body.muscles;
+    assert.equal(planned.find((m) => m.nom === "Quadriceps").series, 2);
+    assert.equal(planned.find((m) => m.nom === "Abdominaux").series, 1);
+
+    const progression = await api("GET", "/stats/exercices", { token: athlete.token });
+    assert.equal(progression.status, 200);
+    const squatStats = progression.body.find((e) => e.exercice === "Squat");
+    assert.deepEqual(squatStats.record, { chargeMax: 50, repsMax: 10 });
+    assert.equal(squatStats.points[0].volume, 800);
+
+    // Un sportif ne consulte pas les stats d'un autre.
+    assert.equal((await api("GET", `/stats/muscles?profilId=${athlete.id}`, { token: other.token })).status, 403);
+  });
+});

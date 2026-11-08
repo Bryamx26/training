@@ -6,6 +6,7 @@ import DifficultySelect from "./DifficultySelect";
 import ExercicePicker from "./ExercicePicker";
 import ExerciceOrderList from "./ExerciceOrderList";
 import WeightVestIcon from "../ui/WeightVestIcon";
+import Chip from "../ui/Chip";
 import { TYPES, exerciceDraft } from "../../lib/exerciceForm";
 
 // Nombre de fiches d'exercice affichées avant « Voir les autres », pour alléger le formulaire.
@@ -17,7 +18,9 @@ const APERCU_EXERCICES = 2;
 // L'ordre du tableau `exercices` est celui de la séance (réglable par glisser-déposer).
 // `nameLabel` adapte le libellé du nom ; `afterMeta` s'insère avant les exercices
 // (la date pour une séance).
-function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance", afterMeta }) {
+// `muscles` (liste des muscles de l'API) : affiche le choix des muscles
+// travaillés pour chaque exercice (séances uniquement).
+function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance", afterMeta, muscles }) {
   const set = (field) => (v) => onChange({ ...value, [field]: v });
   const [toutAfficher, setToutAfficher] = useState(false);
   const nbExercices = value.exercices.length;
@@ -30,6 +33,10 @@ function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance",
 
   function patchExercice(key, patch) {
     onChange({ ...value, exercices: value.exercices.map((ex) => (ex.key === key ? { ...ex, ...patch } : ex)) });
+  }
+
+  function toggleMuscle(ex, nom) {
+    patchExercice(ex.key, { muscles: ex.muscles.includes(nom) ? ex.muscles.filter((m) => m !== nom) : [...ex.muscles, nom] });
   }
 
   // Bouton gilet lesté : affiche le champ de poids, ou le masque en retirant le lest.
@@ -119,6 +126,18 @@ function SeanceContentFields({ value, onChange, nameLabel = "Nom de la séance",
                 <Input aria-label="Durée (s)" placeholder="Durée(s)" inputMode="numeric" value={ex.duree} onChange={(e) => updateExercice(ex.key, "duree", e.target.value)} />
                 <Input aria-label="Repos (s)" placeholder="Repos(s)" inputMode="numeric" value={ex.tempsDeRepos} onChange={(e) => updateExercice(ex.key, "tempsDeRepos", e.target.value)} />
               </div>
+              {muscles && (
+                <div className="flex flex-col gap-2" role="group" aria-label={`Muscles travaillés par ${ex.exercice}`}>
+                  <span className="text-label text-muted-foreground">Muscles travaillés</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {muscles.map((m) => (
+                      <Chip key={m.id} onClick={() => toggleMuscle(ex, m.nom)} aria-pressed={ex.muscles.includes(m.nom)} badge={ex.muscles.includes(m.nom) ? "✓" : undefined}>
+                        {m.nom}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
               {ex.avecLest && (
                 <Input
                   label="Lest (kg)"
