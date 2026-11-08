@@ -9,7 +9,7 @@ services:
     build:
       context: .
       dockerfile: docker/api.prod.Dockerfile
-    image: bryamx26/api-training-app:1.2 # nom / repo : version
+    image: bryamx26/api-training-app:1.7 # nom / repo : version
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -27,7 +27,7 @@ services:
       - TRUST_PROXY=1
     ports:
       # Exposé seulement sur la machine : le reverse proxy HTTPS le publie sur API_URL.
-      - "127.0.0.1:${API_PORT:-4000}:4000"
+      - "0.0.0.0:${API_PORT:-4000}:4000"
     volumes:
       - api_data:/data
 
@@ -38,12 +38,10 @@ services:
       args:
         - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
         - VITE_API_URL=${API_URL:?API_URL doit être défini dans .env (voir .env.example)}
-    image: bryamx26/frontend-training-app:1.2
+    image: bryamx26/frontend-training-app:1.7
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${WEB_PORT:-80}:80"
-    depends_on:
-      - api
+      - "0.0.0.0:${WEB_PORT:-80}:80"
 
 volumes:
   api_data:
