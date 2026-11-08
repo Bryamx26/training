@@ -9,6 +9,8 @@ router.use(requireAuth);
 
 // Lecture : le controller limite un sportif à ses propres séances.
 router.get("/", asyncHandler(controller.list));
+// Avant "/:id" : sinon "resume" serait lu comme un identifiant de séance.
+router.get("/resume", requireStaff, asyncHandler(controller.resume));
 router.get("/:id", asyncHandler(controller.getById));
 
 // Saisie de ce que le participant connecté a réellement fait.

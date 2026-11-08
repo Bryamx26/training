@@ -82,6 +82,49 @@ async function list(req, res) {
   res.json({ items, total, nextCursor: rows.length > limit ? items[items.length - 1].id : null });
 }
 
+// Score d'un participant sur une séance, comme src/lib/score.js
+// (computeScoreForProfil) : null tant que tous les exercices ne sont pas notés.
+function participantPercentage(exercices, profilId) {
+  if (exercices.length === 0) return null;
+  const notes = exercices.map((ex) => ex.notes.find((n) => n.profilId === profilId)?.note).filter((n) => n !== null && n !== undefined);
+  if (notes.length !== exercices.length) return null;
+  return Math.round((notes.reduce((sum, n) => sum + n, 0) / (notes.length * 10)) * 100);
+}
+
+// GET /api/circuits/resume?depuis=<date> — chiffres du tableau de bord du
+// staff sans charger toutes les séances : nombre de séances, séances à venir
+// (à partir de `depuis`, le début de la journée côté appareil), progression
+// moyenne des sportifs et les 3 prochaines séances. Même périmètre que la
+// liste : un coach ses séances, un admin toutes.
+async function resume(req, res) {
+  const where = isAdmin(req.user) ? {} : { auteurId: req.user.id };
+  const depuis = parseDay(req.query.depuis, new Date(new Date().toDateString()));
+  const upcoming = { ...where, date: { gte: depuis } };
+
+  const [seancesCreees, aVenir, prochaines, notees] = await Promise.all([
+    prisma.circuit.count({ where }),
+    prisma.circuit.count({ where: upcoming }),
+    prisma.circuit.findMany({ where: upcoming, include: INCLUDE, orderBy: [{ date: "asc" }, { id: "asc" }], take: 3 }),
+    // Juste ce qu'il faut pour le score : participants, exercices et leurs notes.
+    prisma.circuit.findMany({
+      where,
+      select: {
+        personnes: { select: { profilId: true } },
+        exercices: { select: { notes: { select: { profilId: true, note: true } } } },
+      },
+    }),
+  ]);
+
+  // Moyenne sur chaque couple (séance, sportif) entièrement noté ; les notes
+  // du coach quand il participe à ses propres séances sont exclues.
+  const scores = notees.flatMap((c) =>
+    c.personnes.filter((p) => p.profilId !== req.user.id).map((p) => participantPercentage(c.exercices, p.profilId))
+  ).filter((s) => s !== null);
+  const progressionMoyenne = scores.length ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : 0;
+
+  res.json({ seancesCreees, aVenir, progressionMoyenne, prochaines });
+}
+
 async function getById(req, res) {
   const circuit = await prisma.circuit.findUnique({ where: { id: parseId(req.params.id) }, include: INCLUDE_DETAIL });
   if (!circuit) throw new HttpError(404, "Séance introuvable", "CIRCUIT_NOT_FOUND");
@@ -240,6 +283,7 @@ async function saveRealisation(req, res) {
 
 module.exports = {
   list,
+  resume,
   getById,
   create,
   update,

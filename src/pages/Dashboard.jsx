@@ -7,7 +7,7 @@ import { circuits as circuitsApi, me as meApi } from "../lib/api";
 import SeanceCard from "../components/seances/SeanceCard";
 import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
-import { Loading } from "../components/ui/States";
+import { Loading, ErrorState } from "../components/ui/States";
 import { computeScoreForProfil } from "../lib/score";
 import BrandMark from "../components/trace/BrandMark";
 import ScorePanel from "../components/trace/ScorePanel";
@@ -130,25 +130,22 @@ function DashboardUtilisateur({ user }) {
 function DashboardAdmin({ user }) {
   const navigate = useNavigate();
   const { design } = useDesign();
-  const [circuits, setCircuits] = useState(null);
+  const [resume, setResume] = useState(null);
   const [sportifs, setSportifs] = useState(null);
+  const [error, setError] = useState(null);
 
+  // Chiffres calculés par l'API (GET /api/circuits/resume) : le tableau de bord
+  // ne télécharge plus toutes les séances du coach. La progression moyenne porte
+  // sur chaque couple (séance, sportif) entièrement noté, hors notes du coach.
   useEffect(() => {
-    circuitsApi.list().then(setCircuits);
-    meApi.subscribers().then(setSportifs);
+    circuitsApi.resume().then(setResume, (e) => setError(e.message));
+    meApi.subscribers().then(setSportifs, (e) => setError(e.message));
   }, []);
 
-  if (!circuits || !sportifs) return <Loading />;
+  if (error) return <ErrorState message={error} />;
+  if (!resume || !sportifs) return <Loading />;
 
-  const aVenir = circuits.filter(isUpcoming);
-  // Chaque participant d'une séance est noté indépendamment : on moyenne sur
-  // chaque couple (séance, sportif) déjà noté, pas sur les séances seules.
-  // Les notes du coach (quand il participe à ses séances) sont exclues : ses
-  // stats personnelles sont dans Stats › Mes stats.
-  const gradees = circuits
-    .flatMap((c) => (c.personnes ?? []).filter((p) => p.profilId !== user.id).map((p) => computeScoreForProfil(c.exercices, p.profilId)))
-    .filter((s) => s.graded);
-  const moyennePct = gradees.length ? Math.round(gradees.reduce((s, g) => s + g.percentage, 0) / gradees.length) : 0;
+  const { seancesCreees, aVenir: nbAVenir, progressionMoyenne: moyennePct, prochaines } = resume;
   const recents = [...sportifs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5);
 
   if (design === "trace") {
@@ -164,8 +161,8 @@ function DashboardAdmin({ user }) {
 
         <div className="grid grid-cols-2 gap-3">
           <KpiTile label="Sportifs" value={sportifs.length} />
-          <KpiTile label="Séances créées" value={circuits.length} />
-          <KpiTile label="À venir" value={aVenir.length} tone="info" />
+          <KpiTile label="Séances créées" value={seancesCreees} />
+          <KpiTile label="À venir" value={nbAVenir} tone="info" />
           <KpiTile label="Progression moy." value={`${moyennePct}%`} tone="progress" progress={{ value: moyennePct, max: 100 }} />
         </div>
 
@@ -205,11 +202,11 @@ function DashboardAdmin({ user }) {
           )}
         </div>
 
-        {aVenir.length > 0 && (
+        {prochaines.length > 0 && (
           <div>
             <p className="t-label mb-2">Séances à venir</p>
             <div className="flex flex-col gap-3">
-              {aVenir.slice(0, 3).map((c) => (
+              {prochaines.map((c) => (
                 <SeanceCard key={c.id} circuit={c} showParticipants />
               ))}
             </div>
@@ -225,8 +222,8 @@ function DashboardAdmin({ user }) {
 
       <div className="grid grid-cols-2 gap-4">
         <KpiTile label="Sportifs" value={sportifs.length} />
-        <KpiTile label="Séances créées" value={circuits.length} />
-        <KpiTile label="À venir" value={aVenir.length} tone="info" />
+        <KpiTile label="Séances créées" value={seancesCreees} />
+        <KpiTile label="À venir" value={nbAVenir} tone="info" />
         <KpiTile label="Progression moy." value={`${moyennePct}%`} tone="progress" progress={{ value: moyennePct, max: 100 }} />
       </div>
 
@@ -263,11 +260,11 @@ function DashboardAdmin({ user }) {
         </div>
       </div>
 
-      {aVenir.length > 0 && (
+      {prochaines.length > 0 && (
         <div>
           <p className="rl-label mb-3">Séances à venir</p>
           <div className="flex flex-col gap-4">
-            {aVenir.slice(0, 3).map((c) => (
+            {prochaines.map((c) => (
               <SeanceCard key={c.id} circuit={c} showParticipants />
             ))}
           </div>

@@ -119,7 +119,10 @@ async function coach(n) {
   while (running) {
     const subs = await call("GET /me/subscribers", "/me/subscribers", { cookie });
     await think();
-    await call("GET /circuits (coach)", "/circuits", { cookie });
+    // Tableau de bord du coach : synthèse calculée par l'API, puis page Séances (une page de 20).
+    await call("GET /circuits/resume", `/circuits/resume?depuis=${new Date(new Date().toDateString()).toISOString()}`, { cookie });
+    await think();
+    await call("GET /circuits?limit=20 (coach)", "/circuits?limit=20", { cookie });
     await think();
     const athleteId = Array.isArray(subs.data) && subs.data.length ? subs.data[Math.floor(Math.random() * subs.data.length)].id : null;
     if (athleteId) {

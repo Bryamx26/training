@@ -63,6 +63,9 @@ export const circuits = {
     return get(`/circuits${qs ? `?${qs}` : ""}`);
   },
   get: (id) => get(`/circuits/${id}`),
+  // Chiffres du tableau de bord du coach (séances, à venir, progression, 3 prochaines).
+  // `depuis` : début de la journée sur l'appareil, pour « à venir ».
+  resume: () => get(`/circuits/resume?${new URLSearchParams({ depuis: new Date(new Date().toDateString()).toISOString() })}`),
   create: (data) => post("/circuits", data),
   update: (id, data) => put(`/circuits/${id}`, data),
   remove: (id) => del(`/circuits/${id}`),

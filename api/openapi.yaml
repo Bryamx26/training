@@ -204,6 +204,31 @@ paths:
           description: Séance créée
           content: { application/json: { schema: { $ref: "#/components/schemas/Circuit" } } }
         "403": { $ref: "#/components/responses/Error" }
+  /circuits/resume:
+    get:
+      tags: [Séances]
+      summary: Chiffres du tableau de bord (coach)
+      description: |
+        Même périmètre que la liste : un coach ses séances, un admin toutes. Réservé au staff.
+        `progressionMoyenne` : moyenne des scores (en %) de chaque couple (séance, sportif) dont
+        tous les exercices sont notés, hors notes du coach sur ses propres séances.
+        `prochaines` : les 3 prochaines séances à partir de `depuis`, de la plus proche à la plus lointaine.
+      parameters:
+        - { name: depuis, in: query, description: "Début de « à venir » (date ISO, en général minuit sur l'appareil). Défaut : minuit côté serveur.", schema: { type: string } }
+      responses:
+        "200":
+          description: Synthèse
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  seancesCreees: { type: integer }
+                  aVenir: { type: integer }
+                  progressionMoyenne: { type: integer, description: "0 à 100" }
+                  prochaines: { type: array, maxItems: 3, items: { $ref: "#/components/schemas/Circuit" } }
+        "400": { description: "Date `depuis` invalide" }
+        "403": { description: "Réservé aux coachs" }
   /circuits/{id}:
     parameters: [{ $ref: "#/components/parameters/Id" }]
     get:

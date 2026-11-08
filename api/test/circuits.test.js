@@ -317,3 +317,80 @@ describe("pagination de la liste des séances", () => {
     assert.equal(res.body.items.length, 7);
   });
 });
+
+describe("synthèse du tableau de bord (GET /circuits/resume)", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+  const minuit = () => new Date(new Date().toDateString());
+
+  // Séances passées et à venir, notées en entier, en partie ou pas du tout,
+  // dont une où le coach participe et se note lui-même.
+  async function scenario() {
+    const { coach, athlete } = await coachAndAthlete();
+    const other = await createUser("USER");
+    await prisma.coachSubscription.create({ data: { coachId: coach.id, athleteId: other.id } });
+    const make = async (days, participants, notes) => {
+      const c = await prisma.circuit.create({
+        data: {
+          nom: `J${days}`,
+          type: "FORCE",
+          date: new Date(minuit().getTime() + days * DAY + 10 * 3600 * 1000),
+          auteurId: coach.id,
+          personnes: { create: participants.map((p) => ({ profilId: p.id })) },
+          exercices: { create: [{ exercice: "Squat", ordre: 0 }, { exercice: "Pompes", ordre: 1 }] },
+        },
+        include: { exercices: true },
+      });
+      for (const [profil, values] of notes) {
+        for (const [i, note] of values.entries()) {
+          if (note !== undefined) await prisma.exerciceNote.create({ data: { exerciceId: c.exercices[i].id, profilId: profil.id, note } });
+        }
+      }
+      return c;
+    };
+    await make(-10, [athlete, other], [[athlete, [8, 6]], [other, [10, 9]]]); // deux sportifs notés en entier
+    await make(-5, [athlete], [[athlete, [7, undefined]]]); // notée en partie : ignorée
+    await make(-2, [athlete, coach], [[athlete, [5, 5]], [coach, [10, 10]]]); // le coach se note : exclu
+    await make(1, [other], []);
+    await make(3, [athlete], []);
+    await make(6, [athlete], []);
+    await make(9, [other], []);
+    return { coach, athlete };
+  }
+
+  it("renvoie les mêmes chiffres que le calcul du front sur la liste complète", async () => {
+    const { coach } = await scenario();
+    const { computeScoreForProfil } = await import("../../src/lib/score.js");
+    const depuis = minuit().toISOString();
+
+    const all = (await api("GET", "/circuits", { token: coach.token })).body;
+    const gradees = all
+      .flatMap((c) => c.personnes.filter((p) => p.profilId !== coach.id).map((p) => computeScoreForProfil(c.exercices, p.profilId)))
+      .filter((s) => s.graded);
+    const attendu = Math.round(gradees.reduce((s, g) => s + g.percentage, 0) / gradees.length);
+
+    const res = await api("GET", `/circuits/resume?depuis=${depuis}`, { token: coach.token });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.seancesCreees, all.length);
+    assert.equal(res.body.aVenir, all.filter((c) => new Date(c.date) >= new Date(depuis)).length);
+    assert.equal(res.body.progressionMoyenne, attendu);
+    // Notées en entier : 14/20 = 70 %, 19/20 = 95 %, 10/20 = 50 % → (70 + 95 + 50) / 3 = 71,7 → 72.
+    assert.equal(res.body.progressionMoyenne, 72);
+  });
+
+  it("donne les 3 prochaines séances, de la plus proche à la plus lointaine", async () => {
+    const { coach } = await scenario();
+    const res = await api("GET", `/circuits/resume?depuis=${minuit().toISOString()}`, { token: coach.token });
+    assert.deepEqual(res.body.prochaines.map((c) => c.nom), ["J1", "J3", "J6"]);
+    assert.ok(res.body.prochaines[0].exercices && res.body.prochaines[0].personnes);
+  });
+
+  it("ne compte que les séances du coach, et refuse les sportifs", async () => {
+    const { coach, athlete } = await scenario();
+    const autre = await createUser("COACH");
+    const vide = await api("GET", "/circuits/resume", { token: autre.token });
+    assert.deepEqual([vide.body.seancesCreees, vide.body.aVenir, vide.body.progressionMoyenne, vide.body.prochaines.length], [0, 0, 0, 0]);
+    assert.equal((await api("GET", "/circuits/resume", { token: athlete.token })).status, 403);
+    assert.equal((await api("GET", "/circuits/resume?depuis=xx", { token: coach.token })).status, 400);
+    assert.ok(coach);
+  });
+});
