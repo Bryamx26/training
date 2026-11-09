@@ -46,6 +46,36 @@ npm install
 npm run dev                                 # http://localhost:5173, /api relayé vers :4000
 ```
 
+## Fichier `.env`
+
+Copier `.env.example` en `.env` à la racine du projet, puis remplir les valeurs. Docker Compose lit ce fichier, en dev (`docker-compose.yml`) comme en production (`docker-compose.prod.yml`). La base SQLite se configure à part, dans `database/.env` (`DATABASE_URL="file:./sport.db"`).
+
+### Dev et production
+
+| Variable | Obligatoire | Rôle |
+|---|---|---|
+| `JWT_SECRET` | oui | Secret qui signe les jetons de session. Le générer avec `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`. Le changer déconnecte tout le monde. |
+| `GOOGLE_CLIENT_ID` | non | Client ID OAuth Google (type « Application Web »). S'il est vide, le bouton Google est masqué. Dans les « Origines JavaScript autorisées », ajouter `http://localhost:5174` en dev et la valeur de `FRONT_URL` en production. |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | non | Compte administrateur. Au démarrage, un compte existant avec cet e-mail est promu ADMIN ; sinon, il est créé avec ce mot de passe (8 caractères minimum). `ADMIN_PASSWORD` peut ensuite être retiré. |
+
+### Production uniquement
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `FRONT_URL` | — (obligatoire) | Adresse publique du front, **avec le protocole et sans `/` final** (ex. `https://sport-track.mon-domaine.fr`). C'est la seule origine autorisée par l'API (CORS). |
+| `API_URL` | — (obligatoire) | Adresse publique de l'API, **avec le protocole et sans `/` final** (ex. `https://api-sport-track.mon-domaine.fr`). Elle est écrite dans le JavaScript compilé : après un changement, il faut reconstruire avec `--build`. |
+| `COOKIE_SECURE` | `true` | Cookie de session réservé à HTTPS. Ne le mettre à `false` que pour un test en HTTP simple sur une autre machine que `localhost`. |
+| `WEB_PORT` | `80` | Port local (127.0.0.1) du front, vers lequel le reverse proxy envoie `FRONT_URL`. |
+| `API_PORT` | `4000` | Port local (127.0.0.1) de l'API, vers lequel le reverse proxy envoie `API_URL`. |
+| `AUTH_RATE_LIMIT` | `10` | Nombre de tentatives de connexion et d'inscriptions publiques autorisées par IP et par 15 minutes. |
+
+> ⚠️ `API_URL=localhost` (sans `http://` ni port) est interprété comme un chemin relatif : le front envoie alors ses requêtes au nginx du front, qui répond **405 Not Allowed**. Pour tester la build de production en local :
+>
+> ```
+> FRONT_URL=http://localhost
+> API_URL=http://localhost:4000
+> ```
+
 ## Rôles
 
 | Rôle | Peut… |
@@ -86,11 +116,11 @@ La CI GitHub (`.github/workflows/ci.yml`) lance le lint, les tests et le build �
 ## Production
 
 ```bash
-cp .env.example .env   # JWT_SECRET obligatoire ; COOKIE_SECURE=true derrière HTTPS
+cp .env.example .env   # JWT_SECRET, FRONT_URL et API_URL obligatoires
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-nginx sert le front compilé et relaie `/api` vers l'API ; la base SQLite est dans le volume `api_data`. Aucun compte de test n'est créé en production. Le compte admin vient de `ADMIN_EMAIL` / `ADMIN_PASSWORD` dans `.env` : promu s'il existe déjà, créé sinon (voir `.env.example`). Placer un reverse proxy HTTPS (Caddy, Traefik…) devant le port 80.
+Le conteneur `web` (nginx) sert le front compilé ; le front appelle l'API directement sur son sous-domaine (`API_URL`). La base SQLite est dans le volume `api_data`. Aucun compte de test n'est créé en production. Le compte admin vient de `ADMIN_EMAIL` / `ADMIN_PASSWORD` dans `.env` : promu s'il existe déjà, créé sinon (voir `.env.example`). Placer un reverse proxy HTTPS (Caddy, Traefik, nginx…) devant les deux ports, qui n'écoutent que sur la machine : `FRONT_URL` → `WEB_PORT` (80) et `API_URL` → `API_PORT` (4000).
 
 ## Légal (RGPD)
 

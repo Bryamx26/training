@@ -7,14 +7,24 @@ import TopAppBar from "../components/layout/TopAppBar";
 import Avatar from "../components/ui/Avatar";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
+import SegmentedControl from "../components/ui/SegmentedControl";
 import { Loading, EmptyState } from "../components/ui/States";
 
-const EMPTY_FORM = { nom: "", prenom: "", mail: "", motDePasse: "", poids: "", taille: "", age: "" };
+const EMPTY_FORM = { nom: "", prenom: "", mail: "", motDePasse: "", poids: "", taille: "", age: "", role: "USER" };
+
+const ROLES = [
+  { value: "USER", label: "Sportif" },
+  { value: "COACH", label: "Coach" },
+  { value: "ADMIN", label: "Admin" },
+];
+const ROLE_LABEL = Object.fromEntries(ROLES.map((r) => [r.value, r.label]));
 
 // `limited` : sportif inscrit lui-même, le coach ne modifie que son suivi
 // physique (l'API refuse le reste).
-function UserForm({ initial, limited = false, onCancel, onSaved }) {
-  const [form, setForm] = useState(initial ?? EMPTY_FORM);
+// `canSetRole` : seul un admin attribue un rôle (l'API refuse sinon). Il ne
+// peut pas changer le sien, pour ne pas perdre ses droits par erreur.
+function UserForm({ initial, limited = false, canSetRole = false, isSelf = false, onCancel, onSaved }) {
+  const [form, setForm] = useState(initial ? { ...EMPTY_FORM, ...initial } : EMPTY_FORM);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const editing = Boolean(initial?.id);
@@ -31,6 +41,7 @@ function UserForm({ initial, limited = false, onCancel, onSaved }) {
       };
       if (!limited) Object.assign(payload, { nom: form.nom, prenom: form.prenom, mail: form.mail });
       if (!limited && form.motDePasse) payload.motDePasse = form.motDePasse;
+      if (canSetRole && !isSelf && form.role !== (initial?.role ?? null)) payload.role = form.role;
 
       const saved = editing ? await profilsApi.update(initial.id, payload) : await profilsApi.create(payload);
       onSaved(saved);
@@ -44,7 +55,9 @@ function UserForm({ initial, limited = false, onCancel, onSaved }) {
   return (
     <form onSubmit={handleSubmit} className="card-surface p-5 flex flex-col gap-3 animate-rise">
       <div className="flex items-center justify-between">
-        <h3 className="text-h3">{editing ? (limited ? `Suivi de ${initial.prenom}` : "Modifier") : "Nouveau sportif"}</h3>
+        <h3 className="text-h3">
+          {editing ? (limited ? `Suivi de ${initial.prenom}` : "Modifier") : canSetRole ? "Nouveau compte" : "Nouveau sportif"}
+        </h3>
         <button type="button" onClick={onCancel} aria-label="Fermer" className="press">
           <X className="w-4 h-4" />
         </button>
@@ -54,6 +67,7 @@ function UserForm({ initial, limited = false, onCancel, onSaved }) {
           {initial.prenom} a créé son compte lui-même : tu peux modifier son suivi physique, pas son identité ni son mot de passe.
         </p>
       )}
+      {canSetRole && !isSelf && <SegmentedControl options={ROLES} value={form.role} onChange={(role) => setForm({ ...form, role })} label="Rôle" />}
       {!limited && (
         <>
           <div className="grid grid-cols-2 gap-3">
@@ -145,31 +159,43 @@ function AdminUsers() {
   const [formTarget, setFormTarget] = useState(null); // null = closed, {} = create, {id,...} = edit
   const [error, setError] = useState(null);
 
+  const isAdmin = user.role === "ADMIN";
+
   function reload() {
+    // Un admin gère tous les comptes (y compris les coachs et admins qu'il crée).
     // Un coach ne gère que ses abonnés actifs ; un sportif créé ici lui est abonné d'office.
-    meApi.subscribers().then(setUsers, (e) => setError(e.message));
+    const load = isAdmin ? profilsApi.list() : meApi.subscribers();
+    load.then(setUsers, (e) => setError(e.message));
   }
 
   useEffect(reload, []);
 
   // Droits complets (identité, mot de passe, suppression) : admin, ou coach
   // qui a créé ce compte. Sinon, suivi physique et « retirer de mes sportifs ».
-  const fullAccess = (u) => user.role === "ADMIN" || u.creeParId === user.id;
+  const fullAccess = (u) => isAdmin || u.creeParId === user.id;
 
-  async function handleDelete(u) {
-    const confirmation = fullAccess(u)
-      ? `Supprimer définitivement le compte de ${u.prenom} ${u.nom} et toutes ses données ?`
-      : `Retirer ${u.prenom} ${u.nom} de tes sportifs ? Son compte et ses séances passées sont conservés.`;
+  async function run(confirmation, action) {
     if (!window.confirm(confirmation)) return;
     setError(null);
     try {
-      if (fullAccess(u)) await profilsApi.remove(u.id);
-      else await meApi.removeSubscriber(u.id);
+      await action();
       reload();
     } catch (err) {
       setError(err.message);
     }
   }
+
+  const handleDelete = (u) =>
+    run(`Supprimer définitivement le compte de ${u.prenom} ${u.nom} et toutes ses données ?`, () => profilsApi.remove(u.id));
+
+  // Désabonner : le compte et les séances passées sont conservés. Pour un compte
+  // créé par le coach, il perd aussi ses droits dessus (l'API les lie à l'abonnement).
+  const handleUnsubscribe = (u) =>
+    run(
+      `Désabonner ${u.prenom} ${u.nom} de tes sportifs ? Son compte et ses séances passées sont conservés` +
+        (fullAccess(u) ? ", mais tu ne pourras plus le gérer." : "."),
+      () => meApi.removeSubscriber(u.id)
+    );
 
   function handleSaved() {
     setFormTarget(null);
@@ -193,12 +219,14 @@ function AdminUsers() {
       />
 
       <div className="px-5 flex flex-col gap-3 pb-8">
-        {user.role === "ADMIN" && <DemandesCoach />}
+        {isAdmin && <DemandesCoach />}
         {formTarget && (
           <UserForm
             key={formTarget.id ?? "new"}
             initial={formTarget.id ? formTarget : null}
             limited={Boolean(formTarget.id) && !fullAccess(formTarget)}
+            canSetRole={isAdmin}
+            isSelf={formTarget.id === user.id}
             onCancel={() => setFormTarget(null)}
             onSaved={handleSaved}
           />
@@ -206,7 +234,7 @@ function AdminUsers() {
         {error && <p className="text-caption text-destructive" role="alert">{error}</p>}
 
         {!users && <Loading />}
-        {users && users.length === 0 && !formTarget && <EmptyState title="Aucun abonné" subtitle="Les sportifs s'abonnent à toi depuis Social, ou ajoute-en un ici." />}
+        {users && users.length === 0 && !formTarget && (isAdmin ? <EmptyState title="Aucun compte" subtitle="Ajoute un compte avec le bouton +." /> : <EmptyState title="Aucun abonné" subtitle="Les sportifs s'abonnent à toi depuis Social, ou ajoute-en un ici." />)}
 
         {users?.map((u) => (
           <div key={u.id} className="card-surface flex items-center gap-3 p-4">
@@ -220,19 +248,24 @@ function AdminUsers() {
                 <p className="text-sm font-bold truncate">
                   {u.prenom} {u.nom}
                 </p>
-                <p className="text-caption text-muted-foreground truncate">{u.mail}</p>
+                <p className="text-caption text-muted-foreground truncate">
+                  {u.role && u.role !== "USER" ? `${ROLE_LABEL[u.role]} · ` : ""}
+                  {u.mail}
+                </p>
               </div>
             </button>
             <button onClick={() => setFormTarget(u)} className="press p-2" aria-label="Modifier">
               <Pencil className="w-4 h-4" />
             </button>
-            {fullAccess(u) ? (
-              <button onClick={() => handleDelete(u)} className="press p-2" aria-label={`Supprimer le compte de ${u.prenom} ${u.nom}`}>
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </button>
-            ) : (
-              <button onClick={() => handleDelete(u)} className="press p-2" aria-label={`Retirer ${u.prenom} ${u.nom} de mes sportifs`}>
+            {/* Liste du coach = ses abonnés : il peut toujours désabonner. */}
+            {!isAdmin && (
+              <button onClick={() => handleUnsubscribe(u)} className="press p-2" aria-label={`Désabonner ${u.prenom} ${u.nom}`} title="Désabonner">
                 <UserMinus className="w-4 h-4 text-destructive" />
+              </button>
+            )}
+            {u.id !== user.id && fullAccess(u) && (
+              <button onClick={() => handleDelete(u)} className="press p-2" aria-label={`Supprimer le compte de ${u.prenom} ${u.nom}`} title="Supprimer le compte">
+                <Trash2 className="w-4 h-4 text-destructive" />
               </button>
             )}
           </div>

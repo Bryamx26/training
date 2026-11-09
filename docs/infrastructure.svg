@@ -108,7 +108,6 @@
   <text x="950" y="536" class="t tw">• en-têtes de sécurité</text>
   <text x="950" y="562" class="t tw">• toute route → index.html (SPA)</text>
   <text x="950" y="600" class="m mw">image bryamx26/frontend-training-app</text>
-  <text x="950" y="626" class="mono volt">/api/ → api:4000 (même origine)</text>
 
   <!-- api -->
   <rect x="1340" y="384" width="372" height="316" rx="18" fill="#161b26"/>
@@ -143,8 +142,6 @@
   <path d="M826 594 H 906 V 682 H 1314 V 650 H 1334" fill="none" stroke="#1d4ed8" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#arrowB)"/>
   <text x="1010" y="706" class="flowm">appels de l'API (fetch + cookie)</text>
 
-  <!-- web → api (même origine, optionnel) -->
-  <path d="M1290 620 L 1336 620" fill="none" stroke="#8a94a6" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrowM)"/>
 
   <!-- api ↔ SQLite -->
   <path d="M1526 700 L 1526 728" fill="none" stroke="#1b2230" stroke-width="2.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
@@ -185,14 +182,13 @@
 
   <!-- Légende -->
   <g transform="translate(40 730)">
-    <rect width="400" height="168" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
+    <rect width="400" height="150" rx="16" fill="#ffffff" stroke="#cfd6e0" stroke-width="1.5"/>
     <text x="22" y="34" class="label">LÉGENDE</text>
     <path d="M22 62 L 72 62" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrowG)"/>
     <text x="86" y="67" class="m">pages, JavaScript, PWA (FRONT_URL)</text>
     <path d="M22 92 L 72 92" stroke="#1d4ed8" stroke-width="2.5" marker-end="url(#arrowB)"/>
     <text x="86" y="97" class="m">appels de l'API, avec le cookie (API_URL)</text>
-    <path d="M22 122 L 72 122" stroke="#8a94a6" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrowM)"/>
-    <text x="86" y="127" class="m">possible mais non utilisé :</text>
-    <text x="86" y="147" class="m">/api/ relayé par nginx (même origine)</text>
+    <path d="M22 122 L 72 122" stroke="#1b2230" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+    <text x="86" y="127" class="m">vérification ou déploiement</text>
   </g>
 </svg>

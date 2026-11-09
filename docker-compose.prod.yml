@@ -1,4 +1,12 @@
-# Production : docker compose -f docker-compose.prod.yml up -d --build
+# Production : images multi-plateformes (amd64 + arm64 pour le Raspberry Pi),
+# construites et poussées sur Docker Hub depuis le PC :
+#   API_URL=https://api-sport-track.bryam.tech \
+#     docker compose -f docker-compose.prod.yml build --builder multi --push
+# Le builder "multi" (docker buildx create --name multi --driver docker-container)
+# est requis : le builder par défaut ne gère pas plusieurs plateformes, donc
+# "up --build" échoue avec ce fichier. Sur le serveur : docker compose pull && up -d.
+# Nouvelle version : changer le tag des deux lignes "image:".
+#
 # Deux sous-domaines, derrière un reverse proxy HTTPS sur le serveur :
 #   FRONT_URL (ex. https://sport-track.mon-domaine.fr)     -> port WEB_PORT (80)
 #   API_URL   (ex. https://api-sport-track.mon-domaine.fr) -> port API_PORT (4000)
@@ -9,7 +17,10 @@ services:
     build:
       context: .
       dockerfile: docker/api.prod.Dockerfile
-    image: bryamx26/api-training-app:1.2 # nom / repo : version
+      platforms:
+        - linux/amd64
+        - linux/arm64 # Raspberry Pi
+    image: bryamx26/api-training-app:1.7 # nom / repo : version
     restart: unless-stopped
     environment:
       - NODE_ENV=production
@@ -27,7 +38,7 @@ services:
       - TRUST_PROXY=1
     ports:
       # Exposé seulement sur la machine : le reverse proxy HTTPS le publie sur API_URL.
-      - "127.0.0.1:${API_PORT:-4000}:4000"
+      - "0.0.0.0:${API_PORT:-4000}:4000"
     volumes:
       - api_data:/data
 
@@ -35,15 +46,16 @@ services:
     build:
       context: .
       dockerfile: docker/web.prod.Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64 # Raspberry Pi
       args:
         - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
         - VITE_API_URL=${API_URL:?API_URL doit être défini dans .env (voir .env.example)}
-    image: bryamx26/frontend-training-app:1.2
+    image: bryamx26/frontend-training-app:1.7
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${WEB_PORT:-80}:80"
-    depends_on:
-      - api
+      - "0.0.0.0:${WEB_PORT:-80}:80"
 
 volumes:
   api_data:
